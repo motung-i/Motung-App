@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:motunge/view/home/home.dart';
-import 'package:motunge/view/onBoarding/onBoarding.dart';
 import 'package:motunge/view/review/review_write.dart';
 
 void main() {
