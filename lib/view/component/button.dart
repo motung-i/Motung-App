@@ -4,8 +4,9 @@ import 'package:motunge/view/designSystem/colors.dart';
 import 'package:motunge/view/designSystem/fonts.dart';
 
 class ButtonComponent extends StatelessWidget {
-  const ButtonComponent({super.key ,required this.isEnable});
+  const ButtonComponent({super.key, required this.isEnable, required this.text});
   final bool isEnable;
+  final String text;
 
   @override
   Widget build(BuildContext context) {
@@ -17,8 +18,8 @@ class ButtonComponent extends StatelessWidget {
       ),
       alignment: Alignment.center,
       padding: EdgeInsets.symmetric(vertical: 12.h),
-      child: Text("완료",
-          style: GlobalFontDesignSystem.m3Semi.copyWith(color:  Colors.white)),
+      child: Text(text,
+          style: GlobalFontDesignSystem.m3Semi.copyWith(color: Colors.white)),
     );
   }
 }

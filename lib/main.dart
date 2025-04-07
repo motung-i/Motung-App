@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:motunge/view/home/home.dart';
 import 'package:motunge/view/onBoarding/onBoarding.dart';
+import 'package:motunge/view/review/review_write.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,7 +29,7 @@ class MyApp extends StatelessWidget {
               useMaterial3: true,
             ),
             debugShowCheckedModeBanner: false,
-            home: const Onboarding(),
+            home: const ReviewWrite(),
           );
         });
   }

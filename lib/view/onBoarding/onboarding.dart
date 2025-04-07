@@ -36,6 +36,7 @@ class Onboarding extends StatelessWidget {
                   ),
                   ButtonComponent(
                     isEnable: false,
+                    text: "완료",
                   )
                 ],
               ))

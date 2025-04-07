@@ -18,14 +18,14 @@ class InputComponent extends StatelessWidget {
   Widget build(BuildContext context) {
     return TextField(
         onChanged: onChanged,
-        maxLines: isLong ? 10 : 1,
-        maxLength: isLong ? 500 : 12,
+        maxLines: isLong ? 8 : 1,
+        maxLength: isLong ? 400 : 12,
         textAlignVertical: TextAlignVertical.top,
         decoration: InputDecoration(
           counterText: "",
           helperMaxLines: 94,
           contentPadding:
-              EdgeInsets.symmetric(vertical: 12.h, horizontal: 16.w),
+              EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
           disabledBorder: InputBorder.none,
           hintText: hintText,
           hintStyle: GlobalFontDesignSystem.m3Regular
@@ -35,7 +35,7 @@ class InputComponent extends StatelessWidget {
           fillColor: DiaryMainGrey.grey100,
           border: OutlineInputBorder(
             borderSide: BorderSide.none,
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(8),
           ),
         ));
   }
