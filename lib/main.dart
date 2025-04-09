@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:motunge/view/review/review_write.dart';
+import 'package:motunge/view/review/review_list.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,7 +27,7 @@ class MyApp extends StatelessWidget {
               useMaterial3: true,
             ),
             debugShowCheckedModeBanner: false,
-            home: const ReviewWrite(),
+            home: const ReviewList(),
           );
         });
   }
