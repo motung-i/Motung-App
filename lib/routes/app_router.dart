@@ -6,10 +6,11 @@ import 'package:motunge/view/login/login.dart';
 import 'package:motunge/view/onBoarding/onboarding.dart';
 import 'package:motunge/view/review/review_list.dart';
 import 'package:motunge/view/review/review_write.dart';
-import 'package:motunge/view/tour/tour.dart';
+import 'package:motunge/view/map/map.dart';
 
 class AppRouter {
-  static final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
+  static final GlobalKey<NavigatorState> rootNavigatorKey =
+      GlobalKey<NavigatorState>();
 
   static final GoRouter router = GoRouter(
     navigatorKey: rootNavigatorKey,
@@ -46,9 +47,9 @@ class AppRouter {
             builder: (context, state) => const ReviewWrite(),
           ),
           GoRoute(
-            path: '/tour',
-            name: 'tour',
-            builder: (context, state) => const TourPage(),
+            path: '/map',
+            name: 'map',
+            builder: (context, state) => const MapPage(),
           ),
         ],
       ),
@@ -59,4 +60,4 @@ class AppRouter {
       ),
     ),
   );
-} 
+}

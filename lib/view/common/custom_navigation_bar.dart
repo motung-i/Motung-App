@@ -33,7 +33,7 @@ class CustomNavigationBar extends StatelessWidget {
             icon: 'assets/images/map',
             label: '지도',
             isSelected: _calculateSelectedIndex(context) == 1,
-            onTap: () => context.go('/tour'),
+            onTap: () => context.go('/map'),
           ),
           _NavBarItem(
             icon: 'assets/images/review',
@@ -55,7 +55,7 @@ class CustomNavigationBar extends StatelessWidget {
   int _calculateSelectedIndex(BuildContext context) {
     final String path = GoRouterState.of(context).uri.path;
     if (path.startsWith('/home')) return 0;
-    if (path.startsWith('/tour')) return 1;
+    if (path.startsWith('/map')) return 1;
     if (path.startsWith('/review')) return 2;
     if (path.startsWith('/profile')) return 3;
     return 0;
@@ -93,7 +93,9 @@ class _NavBarItem extends StatelessWidget {
             Text(
               label,
               style: TextStyle(
-                color: isSelected ? const Color(0xFF125CED) : const Color(0xFFA5A6A9),
+                color: isSelected
+                    ? const Color(0xFF125CED)
+                    : const Color(0xFFA5A6A9),
                 fontSize: 12,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               ),
@@ -103,4 +105,4 @@ class _NavBarItem extends StatelessWidget {
       ),
     );
   }
-} 
+}

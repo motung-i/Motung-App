@@ -2,18 +2,24 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:motunge/view/component/button.dart';
+import 'package:motunge/view/designSystem/colors.dart';
+import 'package:motunge/view/designSystem/fonts.dart';
 import 'package:motunge/viewModel/map_viewmodel.dart';
 
-class TourPage extends StatefulWidget {
-  const TourPage({super.key});
+class MapPage extends StatefulWidget {
+  const MapPage({super.key});
 
   @override
-  State<TourPage> createState() => _TourPageState();
+  State<MapPage> createState() => _MapPageState();
 }
 
-class _TourPageState extends State<TourPage> {
+class _MapPageState extends State<MapPage> {
   final mapControllerCompleter = Completer<NaverMapController>();
+  final DraggableScrollableController sheetController =
+      DraggableScrollableController();
   final mapViewModel = MapViewmodel();
   NaverMapController? _mapController;
   final List<NOverlay> _overlays = [];
@@ -22,6 +28,13 @@ class _TourPageState extends State<TourPage> {
   void initState() {
     super.initState();
     _initializeLocation();
+  }
+
+  @override
+  void dispose() {
+    _mapController?.dispose();
+    sheetController.dispose();
+    super.dispose();
   }
 
   Future<void> _initializeLocation() async {
@@ -107,7 +120,8 @@ class _TourPageState extends State<TourPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: NaverMap(
+        body: Stack(children: [
+      NaverMap(
         options: const NaverMapViewOptions(
           indoorEnable: true,
           locationButtonEnable: false,
@@ -120,6 +134,45 @@ class _TourPageState extends State<TourPage> {
           _drawPolyline();
         },
       ),
-    );
+      DraggableScrollableSheet(
+        initialChildSize: 0.28,
+        maxChildSize: 0.3,
+        minChildSize: 0.28,
+        controller: sheetController,
+        builder: (BuildContext context, scrollController) {
+          return Container(
+            clipBehavior: Clip.hardEdge,
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(20),
+                topRight: Radius.circular(20),
+              ),
+            ),
+            child: CustomScrollView(
+              controller: scrollController,
+              slivers: [
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding:
+                        EdgeInsets.symmetric(horizontal: 24.w, vertical: 28.h),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text("아직 여행지가 정해지지 않았어요!", style: GlobalFontDesignSystem.m1Semi),
+                        SizedBox(height: 4.h),
+                        Text("같이 세기의 여행을 떠나볼까요?", style: GlobalFontDesignSystem.m3Regular.copyWith(color: DiaryMainGrey.grey800)),
+                        SizedBox(height: 20.h),
+                        ButtonComponent(isEnable: true, text: "여행지 뽑기")
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      )
+    ]));
   }
 }
