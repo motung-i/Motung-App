@@ -14,9 +14,17 @@ class ReviewList extends StatefulWidget {
 class _ReviewListState extends State<ReviewList> {
   bool _showPhotoReviewsOnly = false;
   final List<String> _regions = [
-    '전북', '전남·광주', '경북', '경남', '충북', '충남', '인천', '서울', '강원', '제주'
+    '전북',
+    '전남·광주',
+    '경북',
+    '경남',
+    '충북',
+    '충남',
+    '인천',
+    '서울',
+    '강원',
+    '제주'
   ];
-  
 
   Map<String, List<ReviewData>> _reviewsByRegion = {};
   bool _isLoading = true;
@@ -27,33 +35,32 @@ class _ReviewListState extends State<ReviewList> {
     _fetchReviews();
   }
 
-
   Future<void> _fetchReviews() async {
     setState(() {
       _isLoading = true;
     });
-    
+
     await Future.delayed(const Duration(seconds: 1));
-    
+
     final Map<String, List<ReviewData>> tempData = {};
     for (String region in _regions) {
-
       final int reviewCount = 10 + (region.hashCode % 10);
       tempData[region] = List.generate(
         reviewCount,
         (index) => ReviewData(
           userName: '사용자${index + 1}',
-          content: '${region}에 있는 멋진 장소입니다. 정말 추천합니다! 일정이 잘 맞아서 좋았고 날씨도 좋아서 더 좋았어요.',
+          content:
+              '${region}에 있는 멋진 장소입니다. 정말 추천합니다! 일정이 잘 맞아서 좋았고 날씨도 좋아서 더 좋았어요.',
           date: '2024.02.${10 + index}',
           location: '$region, 평화동',
           isRecommended: index % 3 == 0,
-          images: index % 2 == 0 
-              ? List.generate(3, (i) => 'assets/images/review_sample.jpg') 
+          images: index % 2 == 0
+              ? List.generate(3, (i) => 'assets/images/review_sample.jpg')
               : [],
         ),
       );
     }
-    
+
     setState(() {
       _reviewsByRegion = tempData;
       _isLoading = false;
@@ -102,85 +109,90 @@ class _ReviewListState extends State<ReviewList> {
               )),
           Expanded(
               child: DefaultTabController(
-            length: _regions.length,
-            child: Column(
-                children: [
-                  // 탭바
-                  TabBar(
-                      indicatorColor: DiaryColor.globalMainColor,
-                      labelStyle: GlobalFontDesignSystem.m3Semi
-                          .copyWith(color: DiaryColor.globalMainColor),
-                      indicatorWeight: 1.h,
-                      dividerHeight: 0,
-                      tabAlignment: TabAlignment.start,
-                      isScrollable: true,
-                      unselectedLabelColor: DiaryMainGrey.grey800,
-                      indicatorSize: TabBarIndicatorSize.tab,
-                      tabs: _regions.map((region) => Tab(
-                        text: region,
-                        height: 40,
-                      )).toList(),
-                  ),
-                  Padding(
-                      padding: EdgeInsets.symmetric(
-                          horizontal: 24.w, vertical: 16.h),
-                      child: Column(
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  length: _regions.length,
+                  child: Column(
+                    children: [
+                      // 탭바
+                      TabBar(
+                        indicatorColor: DiaryColor.globalMainColor,
+                        labelStyle: GlobalFontDesignSystem.m3Semi
+                            .copyWith(color: DiaryColor.globalMainColor),
+                        indicatorWeight: 1.h,
+                        dividerHeight: 0,
+                        tabAlignment: TabAlignment.start,
+                        isScrollable: true,
+                        unselectedLabelColor: DiaryMainGrey.grey800,
+                        indicatorSize: TabBarIndicatorSize.tab,
+                        tabs: _regions
+                            .map((region) => Tab(
+                                  text: region,
+                                  height: 40,
+                                ))
+                            .toList(),
+                      ),
+                      Padding(
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 24.w, vertical: 16.h),
+                          child: Column(
                             children: [
-                              Text(
-                                "총 ${_getTotalReviewCount()}개",
-                                style: GlobalFontDesignSystem.labelRegular
-                                    .copyWith(
-                                  color: DiaryMainGrey.grey700,
-                                ),
-                              ),
-                              GestureDetector(
-                                onTap: () {
-                                  setState(() {
-                                    _showPhotoReviewsOnly = !_showPhotoReviewsOnly;
-                                  });
-                                },
-                                child: Row(
-                                  children: [
-                                    Text(
-                                      "사진리뷰",
-                                      style: GlobalFontDesignSystem.m3Regular
-                                          .copyWith(color: Colors.black),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    "총 ${_getTotalReviewCount()}개",
+                                    style: GlobalFontDesignSystem.labelRegular
+                                        .copyWith(
+                                      color: DiaryMainGrey.grey700,
                                     ),
-                                    SizedBox(width: 4.w),
-                                    SvgPicture.asset(
-                                      _showPhotoReviewsOnly
-                                          ? "assets/images/checked.svg"
-                                          : "assets/images/unchecked.svg",
-                                      width: 24.w,
-                                      height: 24.h,
-                                    )
-                                  ],
-                                ),
+                                  ),
+                                  GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        _showPhotoReviewsOnly =
+                                            !_showPhotoReviewsOnly;
+                                      });
+                                    },
+                                    child: Row(
+                                      children: [
+                                        Text(
+                                          "사진리뷰",
+                                          style: GlobalFontDesignSystem
+                                              .m3Regular
+                                              .copyWith(color: Colors.black),
+                                        ),
+                                        SizedBox(width: 4.w),
+                                        SvgPicture.asset(
+                                          _showPhotoReviewsOnly
+                                              ? "assets/images/checked.svg"
+                                              : "assets/images/unchecked.svg",
+                                          width: 24.w,
+                                          height: 24.h,
+                                        )
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: 12.h),
+                              Divider(
+                                color: DiaryMainGrey.grey100,
+                                height: 1.h,
+                                thickness: 1.h,
                               ),
                             ],
-                          ),
-                          SizedBox(height: 12.h),
-                          Divider(
-                            color: DiaryMainGrey.grey100,
-                            height: 1.h,
-                            thickness: 1.h,
-                          ),
-                        ],
-                      )),
-                  Expanded(
-                    child: TabBarView(
-                      children: _regions.map((region) {
-                        return _isLoading
-                            ? _buildLoadingIndicator()
-                            : _buildReviewListForRegion(region);
-                      }).toList(),
-                    ),
-                  )
-                ],
-              ))), 
+                          )),
+                      Expanded(
+                        child: TabBarView(
+                          children: _regions.map((region) {
+                            return _isLoading
+                                ? _buildLoadingIndicator()
+                                : _buildReviewListForRegion(region);
+                          }).toList(),
+                        ),
+                      )
+                    ],
+                  ))),
         ],
       )),
     );
@@ -194,7 +206,7 @@ class _ReviewListState extends State<ReviewList> {
 
   int _getTotalReviewCount() {
     if (_isLoading) return 0;
-    
+
     int total = 0;
     for (final reviews in _reviewsByRegion.values) {
       if (_showPhotoReviewsOnly) {
@@ -208,12 +220,13 @@ class _ReviewListState extends State<ReviewList> {
 
   Widget _buildReviewListForRegion(String region) {
     final reviews = _reviewsByRegion[region] ?? [];
-    final filteredReviews = _showPhotoReviewsOnly 
+    final filteredReviews = _showPhotoReviewsOnly
         ? reviews.where((review) => review.images.isNotEmpty).toList()
         : reviews;
-    
+
     return filteredReviews.isEmpty
-        ? Center(child: Text('리뷰가 없습니다', style: GlobalFontDesignSystem.m3Regular))
+        ? Center(
+            child: Text('리뷰가 없습니다', style: GlobalFontDesignSystem.m3Regular))
         : ListView.builder(
             padding: EdgeInsets.symmetric(horizontal: 24.w),
             itemCount: filteredReviews.length,
@@ -234,17 +247,18 @@ class _ReviewListState extends State<ReviewList> {
               if (review.isRecommended)
                 Container(
                   margin: EdgeInsets.only(bottom: 12.h),
-                  padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+                  padding:
+                      EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
                   decoration: BoxDecoration(
                     color: DiaryMainGrey.grey100,
                     borderRadius: BorderRadius.circular(8.r),
                   ),
                   child: Text(
-                        "이 장소를 추천해요 👍",
-                        style: GlobalFontDesignSystem.m3Semi.copyWith(
-                          color: DiaryMainGrey.grey1000,
-                        ),
-                      ),
+                    "이 장소를 추천해요 👍",
+                    style: GlobalFontDesignSystem.m3Semi.copyWith(
+                      color: DiaryMainGrey.grey1000,
+                    ),
+                  ),
                 ),
               Row(
                 children: [
@@ -340,4 +354,3 @@ class ReviewData {
     this.images = const [],
   });
 }
-

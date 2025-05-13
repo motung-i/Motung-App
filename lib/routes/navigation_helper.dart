@@ -42,9 +42,9 @@ class Navigation {
 
   // 뒤로 가기
   static void back() {
-    if (AppRouter.rootNavigatorKey.currentContext != null && 
+    if (AppRouter.rootNavigatorKey.currentContext != null &&
         GoRouter.of(AppRouter.rootNavigatorKey.currentContext!).canPop()) {
       AppRouter.rootNavigatorKey.currentContext?.pop();
     }
   }
-} 
+}

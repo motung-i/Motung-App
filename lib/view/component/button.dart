@@ -4,7 +4,8 @@ import 'package:motunge/view/designSystem/colors.dart';
 import 'package:motunge/view/designSystem/fonts.dart';
 
 class ButtonComponent extends StatelessWidget {
-  const ButtonComponent({super.key, required this.isEnable, required this.text});
+  const ButtonComponent(
+      {super.key, required this.isEnable, required this.text});
   final bool isEnable;
   final String text;
 

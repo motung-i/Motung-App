@@ -40,7 +40,7 @@ class _ReviewWriteState extends State<ReviewWrite> {
                 SizedBox(
                   height: 4.h,
                 ),
-                 Container(
+                Container(
                   decoration: BoxDecoration(
                       color: DiaryMainGrey.grey100,
                       borderRadius: BorderRadius.circular(8)),
@@ -53,7 +53,9 @@ class _ReviewWriteState extends State<ReviewWrite> {
                         .copyWith(color: DiaryMainGrey.grey800),
                   ),
                 ),
-                SizedBox(height: 28.h,),
+                SizedBox(
+                  height: 28.h,
+                ),
                 Text(
                   "추천 여부",
                   style: GlobalFontDesignSystem.labelRegular
@@ -75,7 +77,9 @@ class _ReviewWriteState extends State<ReviewWrite> {
                         .copyWith(color: DiaryMainGrey.grey800),
                   ),
                 ),
-                SizedBox(height: 16.h,),
+                SizedBox(
+                  height: 16.h,
+                ),
                 Container(
                   decoration: BoxDecoration(
                       color: DiaryMainGrey.grey100,
@@ -89,18 +93,36 @@ class _ReviewWriteState extends State<ReviewWrite> {
                         .copyWith(color: DiaryMainGrey.grey800),
                   ),
                 ),
-                SizedBox(height: 28.h,),
+                SizedBox(
+                  height: 28.h,
+                ),
                 Text(
                   "추천 여부",
                   style: GlobalFontDesignSystem.labelRegular
                       .copyWith(color: DiaryMainGrey.grey600),
                 ),
-                SizedBox(height:  10.h,),
-                InputComponent(hintText: "내용을 작성해 주세요", isLong: true, onChanged: (text) {}),
-                SizedBox(height: 61.h,),
-                ButtonComponent(isEnable: true, text: "작성하기",),
-                SizedBox(height: 16.h,),
-                Align(alignment: Alignment.center, child:  Text("리뷰 건너뛰기", style: GlobalFontDesignSystem.labelRegular.copyWith(color: DiaryMainGrey.grey300)))
+                SizedBox(
+                  height: 10.h,
+                ),
+                InputComponent(
+                    hintText: "내용을 작성해 주세요",
+                    isLong: true,
+                    onChanged: (text) {}),
+                SizedBox(
+                  height: 61.h,
+                ),
+                ButtonComponent(
+                  isEnable: true,
+                  text: "작성하기",
+                ),
+                SizedBox(
+                  height: 16.h,
+                ),
+                Align(
+                    alignment: Alignment.center,
+                    child: Text("리뷰 건너뛰기",
+                        style: GlobalFontDesignSystem.labelRegular
+                            .copyWith(color: DiaryMainGrey.grey300)))
               ],
             ),
           )

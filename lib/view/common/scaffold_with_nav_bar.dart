@@ -16,4 +16,4 @@ class ScaffoldWithNavBar extends StatelessWidget {
       bottomNavigationBar: const CustomNavigationBar(),
     );
   }
-} 
+}
