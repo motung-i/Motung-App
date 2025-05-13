@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:motunge/view/review/review_list.dart';
+import 'package:motunge/routes/app_router.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+  await FlutterNaverMap().init(
+    clientId: 's8fd3gla1n',
+  );
   runApp(const MyApp());
 }
 
@@ -19,7 +23,7 @@ class MyApp extends StatelessWidget {
         minTextAdapt: true,
         splitScreenMode: true,
         builder: (_, child) {
-          return MaterialApp(
+          return MaterialApp.router(
             title: '모퉁이',
             theme: ThemeData(
               colorScheme: ColorScheme.fromSeed(seedColor: Colors.white),
@@ -27,7 +31,7 @@ class MyApp extends StatelessWidget {
               useMaterial3: true,
             ),
             debugShowCheckedModeBanner: false,
-            home: const ReviewList(),
+            routerConfig: AppRouter.router,
           );
         });
   }
