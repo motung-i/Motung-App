@@ -25,7 +25,7 @@ class Topbar extends StatelessWidget {
                 onTap: () => Navigator.of(context).pop(),
                 child: SvgPicture.asset("assets/images/arrow.svg",
                     width: 24.w, height: 24.h)),
-            Text("정보 기입", style: GlobalFontDesignSystem.m3Semi),
+            Text(text, style: GlobalFontDesignSystem.m3Semi),
             isSelectable
                 ? Text("선택",
                     style: GlobalFontDesignSystem.m3Regular.copyWith(

@@ -45,7 +45,7 @@ class CustomNavigationBar extends StatelessWidget {
             icon: 'assets/images/profile',
             label: '마이',
             isSelected: _calculateSelectedIndex(context) == 3,
-            onTap: () => context.go('/profile'),
+            onTap: () => context.go('/my'),
           ),
         ],
       ),
