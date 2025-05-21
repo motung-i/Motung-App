@@ -15,7 +15,11 @@ class Onboarding extends StatelessWidget {
       body: SafeArea(
           child: Column(
         children: [
-          Topbar(isSelectable: false, isSelected: false, text: "정보 기입"),
+          Topbar(
+              isSelectable: false,
+              isPopAble: true,
+              text: "정보 기입",
+              selectAbleText: null),
           Padding(
               padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
               child: Column(

@@ -16,7 +16,8 @@ class ChangeNickname extends StatelessWidget {
         children: [
           Topbar(
             isSelectable: false,
-            isSelected: false,
+            isPopAble: true,
+            selectAbleText: null,
             text: "닉네임 변경",
           ),
           Expanded(

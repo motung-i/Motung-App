@@ -24,7 +24,8 @@ class _ReviewWriteState extends State<ReviewWrite> {
         children: [
           Topbar(
             isSelectable: false,
-            isSelected: false,
+            isPopAble: true,
+            selectAbleText: null,
             text: "리뷰 작성",
           ),
           SizedBox(height: 28.h),

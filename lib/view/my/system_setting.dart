@@ -5,8 +5,8 @@ import 'package:motunge/view/component/topBar.dart';
 import 'package:motunge/view/designSystem/colors.dart';
 import 'package:motunge/view/designSystem/fonts.dart';
 
-class MyPage extends StatelessWidget {
-  const MyPage({super.key});
+class SystemSettingPage extends StatelessWidget {
+  const SystemSettingPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -14,6 +14,12 @@ class MyPage extends StatelessWidget {
         body: SafeArea(
             child: Column(
       children: [
+        Topbar(
+          isSelectable: false,
+          isPopAble: true,
+          selectAbleText: null,
+          text: "시스템 설정",
+        ),
         Padding(
             padding: EdgeInsets.symmetric(horizontal: 24.w),
             child: _buildSystemConfig()),
@@ -25,11 +31,6 @@ class MyPage extends StatelessWidget {
 Widget _buildSystemConfig() {
   return Column(
     children: [
-      Topbar(
-        isSelectable: false,
-        isSelected: false,
-        text: "시스템 설정",
-      ),
       SizedBox(height: 36.h),
       Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -113,59 +114,6 @@ Widget _buildSystemConfig() {
           ),
         ],
       )
-    ],
-  );
-}
-
-Widget _buildProfileMain() {
-  return Column(
-    children: [
-      SizedBox(height: 60.h),
-      Text(
-        "이지혁",
-        style: GlobalFontDesignSystem.m1Semi,
-      ),
-      SizedBox(
-        height: 60.h,
-      ),
-      Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            "내가 쓴 리뷰",
-            style: GlobalFontDesignSystem.m3Regular,
-          ),
-          SvgPicture.asset(
-            "assets/images/arrow-right.svg",
-            width: 24.w,
-            height: 24.h,
-          )
-        ],
-      ),
-      SizedBox(
-        height: 24.h,
-      ),
-      Divider(
-        color: DiaryMainGrey.grey100,
-        height: 1.h,
-      ),
-      SizedBox(
-        height: 24.h,
-      ),
-      Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            "시스템",
-            style: GlobalFontDesignSystem.m3Regular,
-          ),
-          SvgPicture.asset(
-            "assets/images/arrow-right.svg",
-            width: 24.w,
-            height: 24.h,
-          )
-        ],
-      ),
     ],
   );
 }
