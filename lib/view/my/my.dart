@@ -49,7 +49,7 @@ class MyPage extends StatelessWidget {
                       height: 24.h,
                     ),
                     GestureDetector(
-                      onTap: () => context.go("/my/system-setting"),
+                      onTap: () => context.push("/my/system-setting"),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
