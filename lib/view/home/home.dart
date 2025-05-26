@@ -12,24 +12,14 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   final DraggableScrollableController sheetController =
       DraggableScrollableController();
-  double topOffset = 700.h;
 
   @override
   void initState() {
     super.initState();
-    sheetController.addListener(_updatePosition);
-  }
-
-  void _updatePosition() {
-    setState(() {
-      topOffset = 642.h -
-          (MediaQuery.of(context).size.height * (sheetController.size * 0.7));
-    });
   }
 
   @override
   void dispose() {
-    sheetController.removeListener(_updatePosition);
     sheetController.dispose();
     super.dispose();
   }
@@ -40,6 +30,8 @@ class _MyHomePageState extends State<MyHomePage> {
       body: Stack(
         children: [
           Container(
+            width: double.infinity,
+            height: double.infinity,
             decoration: BoxDecoration(
               color: Colors.transparent,
               image: DecorationImage(
@@ -48,34 +40,39 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
             ),
           ),
-          AnimatedPositioned(
-            duration: Duration(milliseconds: 100),
-            top: topOffset,
-            left: 24.w,
-            right: 24.w,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "여긴 어때요?",
-                      style: GlobalFontDesignSystem.m2Regular
-                          .copyWith(color: Colors.white),
-                    ),
-                    Text(
-                      "전주, 한옥마을",
-                      style: GlobalFontDesignSystem.h4Semi
-                          .copyWith(color: Colors.white),
-                    ),
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: MediaQuery.of(context).size.height,
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0xff222222).withValues(alpha: 0.2),
+                    Colors.transparent,
                   ],
                 ),
+              ),
+            ),
+          ),
+          Padding(
+            padding: EdgeInsets.only(left: 24.w),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(height: 63.h),
                 Text(
-                  "1/3",
-                  style: GlobalFontDesignSystem.labelRegular
-                      .copyWith(color: Color(0xff666669)),
+                  "여긴 어때요?",
+                  style: GlobalFontDesignSystem.m2Regular
+                      .copyWith(color: Colors.white),
+                ),
+                Text(
+                  "전주, 한옥마을",
+                  style: GlobalFontDesignSystem.h4Semi
+                      .copyWith(color: Colors.white),
                 ),
               ],
             ),
