@@ -4,11 +4,12 @@ import 'package:motunge/view/common/scaffold_with_nav_bar.dart';
 import 'package:motunge/view/home/home.dart';
 import 'package:motunge/view/login/login.dart';
 import 'package:motunge/view/my/change_nickname.dart';
+import 'package:motunge/view/my/my.dart';
 import 'package:motunge/view/onBoarding/onboarding.dart';
 import 'package:motunge/view/review/review_list.dart';
 import 'package:motunge/view/review/review_write.dart';
 import 'package:motunge/view/map/map.dart';
-import 'package:motunge/view/my/mypage.dart';
+import 'package:motunge/view/my/system_setting.dart';
 
 class AppRouter {
   static final GlobalKey<NavigatorState> rootNavigatorKey =
@@ -62,6 +63,11 @@ class AppRouter {
             path: '/my',
             name: 'my',
             builder: (context, state) => const MyPage(),
+          ),
+          GoRoute(
+            path: '/my/system-setting',
+            name: 'systemSetting',
+            builder: (context, state) => const SystemSettingPage(),
           ),
         ],
       ),

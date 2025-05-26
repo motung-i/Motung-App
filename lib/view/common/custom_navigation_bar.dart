@@ -57,7 +57,7 @@ class CustomNavigationBar extends StatelessWidget {
     if (path.startsWith('/home')) return 0;
     if (path.startsWith('/map')) return 1;
     if (path.startsWith('/review')) return 2;
-    if (path.startsWith('/profile')) return 3;
+    if (path.startsWith('/my')) return 3;
     return 0;
   }
 }
