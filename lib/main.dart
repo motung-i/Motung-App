@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:motunge/routes/app_router.dart';
@@ -10,6 +11,7 @@ void main() async {
   await FlutterNaverMap().init(
     clientId: 's8fd3gla1n',
   );
+  await dotenv.load(fileName: ".env");
   runApp(const MyApp());
 }
 

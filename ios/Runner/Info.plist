@@ -43,6 +43,20 @@
 		</array>
 		<key>CADisableMinimumFrameDurationOnPhone</key>
 		<true/>
+		<key>GIDServerClientID</key>
+		<string>826127484911-03dc3urfgc2a64o6fsthopve4adiub01.apps.googleusercontent.com</string>
+		<key>GIDClientID</key>
+		<string>826127484911-03dc3urfgc2a64o6fsthopve4adiub01.apps.googleusercontent.com</string>
+		<key>CFBundleURLTypes</key>
+		<array>
+			<dict>
+				<key>CFBundleURLSchemes</key>
+				<array>
+					<!-- google login -->
+					<string>com.googleusercontent.apps.826127484911-03dc3urfgc2a64o6fsthopve4adiub01</string>
+				</array>
+			</dict>
+		</array>
 		<key>UIApplicationSupportsIndirectInputEvents</key>
 		<true/>
 		<key>UIStatusBarHidden</key>
