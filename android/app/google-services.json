@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "138127728399",
+    "project_id": "motung-c1011",
+    "storage_bucket": "motung-c1011.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:138127728399:android:4cde243e2d0fdcff00a87a",
+        "android_client_info": {
+          "package_name": "com.example.motunge"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB5eVR_-u7xMMlS1B05SoBKfX8IUUu7FVE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
