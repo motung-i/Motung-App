@@ -1,10 +1,48 @@
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:motunge/routes/navigation_helper.dart';
 import 'package:motunge/view/designSystem/fonts.dart';
+import 'package:motunge/viewModel/auth_viewmodel.dart';
 
-class LoginPage extends StatelessWidget {
+class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
+
+  @override
+  State<LoginPage> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+  bool _isLoading = false;
+
+  Future<void> _handleGoogleLogin() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final response = await AuthViewModel().googleLogin();
+      if (response != null) {
+        Navigation.toOnboarding();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('로그인 중 오류가 발생했습니다. 다시 시도해주세요.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -34,14 +72,13 @@ class LoginPage extends StatelessWidget {
               height: 307.h,
             ),
             GestureDetector(
-              onTap: () {
-                Navigation.toOnboarding();
-              },
+              onTap: _isLoading ? null : _handleGoogleLogin,
               child: Container(
                 height: 52.h,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: Color(0xffebebeb)),
+                  color: _isLoading ? Colors.grey[200] : Colors.white,
                 ),
                 padding: EdgeInsets.symmetric(horizontal: 88.w),
                 child: Row(
@@ -54,8 +91,10 @@ class LoginPage extends StatelessWidget {
                       height: 24.h,
                     ),
                     Text(
-                      "Google로 시작하기",
-                      style: GlobalFontDesignSystem.m3Semi,
+                      _isLoading ? "로그인 중..." : "Google로 시작하기",
+                      style: GlobalFontDesignSystem.m3Semi.copyWith(
+                        color: _isLoading ? Colors.grey : Colors.black,
+                      ),
                     )
                   ],
                 ),
@@ -65,9 +104,7 @@ class LoginPage extends StatelessWidget {
               height: 15.h,
             ),
             GestureDetector(
-              onTap: () {
-                Navigation.toOnboarding();
-              },
+              onTap: () async {},
               child: Container(
                 height: 52.h,
                 decoration: BoxDecoration(

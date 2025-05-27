@@ -17,7 +17,7 @@ class AppRouter {
 
   static final GoRouter router = GoRouter(
     navigatorKey: rootNavigatorKey,
-    initialLocation: '/my/change-nickname',
+    initialLocation: '/login',
     routes: [
       GoRoute(
         path: '/login',
