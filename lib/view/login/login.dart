@@ -1,7 +1,5 @@
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:motunge/routes/navigation_helper.dart';
 import 'package:motunge/view/designSystem/fonts.dart';
 import 'package:motunge/viewModel/auth_viewmodel.dart';
@@ -23,8 +21,10 @@ class _LoginPageState extends State<LoginPage> {
 
     try {
       final response = await AuthViewModel().googleLogin();
-      if (response != null) {
+      if (response == false) {
         Navigation.toOnboarding();
+      } else if (response == true) {
+        Navigation.toHome();
       }
     } catch (e) {
       if (mounted) {
