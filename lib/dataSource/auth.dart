@@ -2,6 +2,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:motunge/model/auth/google_oauth_request.dart';
 import 'package:motunge/model/auth/google_oauth_response.dart';
 import 'package:motunge/model/auth/is_user_register_response.dart';
+import 'package:motunge/model/auth/register_request.dart';
 import 'package:motunge/network/dio.dart';
 
 class AuthDataSource {
@@ -20,4 +21,7 @@ class AuthDataSource {
     return IsUserRegisterResponse.fromJson(response.data);
   }
 
+  Future<void> register(RegisterRequest request) async {
+    await dio.post('${dotenv.env['API_URL']}/auth/register', data: request);
+  }
 }
