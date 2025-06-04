@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:motunge/state/auth_notifier.dart';
 import 'package:motunge/view/common/scaffold_with_nav_bar.dart';
 import 'package:motunge/view/home/home.dart';
 import 'package:motunge/view/login/login.dart';
 import 'package:motunge/view/my/change_nickname.dart';
 import 'package:motunge/view/my/my.dart';
+import 'package:motunge/model/auth/auth_state.dart';
 import 'package:motunge/view/onBoarding/onboarding.dart';
 import 'package:motunge/view/review/review_list.dart';
 import 'package:motunge/view/review/review_write.dart';
@@ -15,8 +17,26 @@ class AppRouter {
   static final GlobalKey<NavigatorState> rootNavigatorKey =
       GlobalKey<NavigatorState>();
 
+  static final AuthNotifier authNotifier = AuthNotifier();
+
   static final GoRouter router = GoRouter(
+    refreshListenable: authNotifier,
     navigatorKey: rootNavigatorKey,
+    redirect: (context, state) {
+      final status = authNotifier.status;
+      final isLoggingIn = state.fullPath == '/login';
+      final isOnboarding = state.fullPath == '/onboarding';
+
+      switch (status) {
+        case AuthStatus.unauthenticated:
+          return isLoggingIn ? null : '/login';
+        case AuthStatus.needRegister:
+          return isOnboarding ? null : '/onboarding';
+        case AuthStatus.authenticated:
+          if (isLoggingIn || isOnboarding) return '/home';
+          return null;
+      }
+    },
     initialLocation: '/login',
     routes: [
       GoRoute(

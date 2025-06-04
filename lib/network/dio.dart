@@ -29,8 +29,10 @@ class _AppDio with DioMixin implements Dio {
     interceptors.addAll([
       InterceptorsWrapper(
         onRequest: (options, handler) async {
-          final storage = FlutterSecureStorage();
-          final token = await storage.read(key: 'accessToken');
+          if (options.path == "${dotenv.env['API_URL']}/auth/refresh") {
+            return handler.next(options);
+          }
+          final token = await FlutterSecureStorage().read(key: 'accessToken');
           if (token != null) {
             options.headers['Authorization'] = 'Bearer $token';
           }

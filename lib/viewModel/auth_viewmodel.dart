@@ -1,8 +1,9 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:motunge/dataSource/auth.dart';
 import 'package:motunge/model/auth/google_oauth_request.dart';
+import 'package:motunge/model/auth/register_request.dart';
+import 'package:motunge/routes/app_router.dart';
 
 class AuthViewModel {
   Future<bool?> googleLogin() async {
@@ -25,13 +26,14 @@ class AuthViewModel {
 
     final loginResponse = await AuthDataSource().googleLogin(request);
 
-    FlutterSecureStorage()
-        .write(key: 'accessToken', value: loginResponse.accessToken);
-    FlutterSecureStorage()
-        .write(key: 'refreshToken', value: loginResponse.refreshToken);
+    await AppRouter.authNotifier.login(loginResponse);
 
     final isUserRegisterResponse = await AuthDataSource().checkRegister();
 
     return isUserRegisterResponse.isUserRegistered;
+  }
+
+  Future<void> register(String nickname) async {
+    await AuthDataSource().register(RegisterRequest(nickname: nickname));
   }
 }

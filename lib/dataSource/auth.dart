@@ -3,6 +3,7 @@ import 'package:motunge/model/auth/google_oauth_request.dart';
 import 'package:motunge/model/auth/google_oauth_response.dart';
 import 'package:motunge/model/auth/is_user_register_response.dart';
 import 'package:motunge/model/auth/register_request.dart';
+import 'package:motunge/model/auth/token_refresh_request.dart';
 import 'package:motunge/network/dio.dart';
 
 class AuthDataSource {
@@ -23,5 +24,12 @@ class AuthDataSource {
 
   Future<void> register(RegisterRequest request) async {
     await dio.post('${dotenv.env['API_URL']}/auth/register', data: request);
+  }
+
+  Future<GoogleOAuthLoginResponse> refreshToken(
+      TokenRefreshRequest request) async {
+    final response = await dio.post('${dotenv.env['API_URL']}/auth/refresh',
+        data: request.toJson());
+    return GoogleOAuthLoginResponse.fromJson(response.data);
   }
 }
