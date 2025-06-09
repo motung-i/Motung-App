@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:motunge/model/map/random_location_response.dart';
 import 'package:motunge/viewModel/map_viewmodel.dart';
 import 'package:motunge/view/map/views/pick_view.dart';
 import 'package:motunge/view/map/views/confirm_view.dart';
@@ -19,102 +20,104 @@ class MapPage extends StatefulWidget {
 enum MapStep { pick, confirm, navigation }
 
 class _MapPageState extends State<MapPage> {
-  // Map Controllers
+  static const double _initialZoom = 15.0;
+  static const double _destinationZoom = 11;
+  static const double _redrawZoom = 11;
+  static const String _tempDistance = "2.5km";
+  static const String _tempDuration = "15분";
+
   final mapControllerCompleter = Completer<NaverMapController>();
   final DraggableScrollableController sheetController =
       DraggableScrollableController();
-  NaverMapController? _mapController;
-
-  // ViewModel
   final mapViewModel = MapViewmodel();
-
-  // Map State
   final List<NOverlay> _overlays = [];
-  MapStep _step = MapStep.pick;
 
-  // Location Data
-  String _selectedLocation = "서울시 강남구";
-  String _distance = "2.5km";
-  String _duration = "15분";
+  NaverMapController? _mapController;
+  MapStep _step = MapStep.pick;
+  String _selectedLocation = "";
+  String _distance = "";
+  String _duration = "";
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
     _initializeLocation();
+    _checkCurrentTour();
   }
 
   @override
   void dispose() {
-    _mapController?.dispose();
+    _clearOverlays();
+    if (_mapController != null) {
+      _mapController!.dispose();
+      _mapController = null;
+    }
     sheetController.dispose();
     super.dispose();
   }
 
-  // Location Methods
   Future<void> _initializeLocation() async {
     try {
-      final permission = await mapViewModel.checkPermission();
-      if (!permission) {
-        final permissionResult = await mapViewModel.requestPermission();
-        if (permissionResult == LocationPermission.denied ||
-            permissionResult == LocationPermission.deniedForever) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('위치 권한이 필요합니다.'),
-                duration: Duration(seconds: 2),
-              ),
-            );
-          }
-          return;
-        }
-      }
+      final hasPermission = await _ensureLocationPermission();
+      if (!hasPermission) return;
 
       final serviceEnabled = await mapViewModel.checkServiceEnabled();
       if (!serviceEnabled) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('위치 서비스를 활성화해주세요.'),
-              duration: Duration(seconds: 2),
-            ),
-          );
-        }
+        _showErrorSnackBar('위치 서비스를 활성화해주세요.');
         return;
       }
 
       final position = await mapViewModel.getCurrentLocation();
-      if (_mapController != null && mounted) {
-        await _mapController!.updateCamera(
-          NCameraUpdate.withParams(
-            target: NLatLng(position.latitude, position.longitude),
-            zoom: 15,
-          ),
-        );
-      }
+      await _updateMapCamera(
+        NLatLng(position.latitude, position.longitude),
+        _initialZoom,
+      );
     } catch (e) {
       debugPrint('Error getting location: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('위치 정보를 가져오는데 실패했습니다.'),
-            duration: Duration(seconds: 2),
-          ),
-        );
-      }
+      _showErrorSnackBar('위치 정보를 가져오는데 실패했습니다.');
     }
   }
 
-  // Map Drawing Methods
-  void _drawPolyline() {
+  Future<bool> _ensureLocationPermission() async {
+    final permission = await mapViewModel.checkPermission();
+    if (permission) return true;
+
+    final permissionResult = await mapViewModel.requestPermission();
+    if (permissionResult == LocationPermission.denied ||
+        permissionResult == LocationPermission.deniedForever) {
+      _showErrorSnackBar('위치 권한이 필요합니다.');
+      return false;
+    }
+    return true;
+  }
+
+  void _showErrorSnackBar(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  Future<void> _updateMapCamera(NLatLng target, double zoom) async {
+    if (_mapController != null && mounted) {
+      await _mapController!.updateCamera(
+        NCameraUpdate.withParams(target: target, zoom: zoom),
+      );
+    }
+  }
+
+  void _drawPolyline(RandomLocationResponse location) {
     if (_mapController == null) return;
 
-    final List<NLatLng> coordinates = [
-      const NLatLng(37.5665, 126.9780), // 서울시청
-      const NLatLng(37.5796, 126.9770), // 경복궁
-      const NLatLng(37.5715, 126.9764), // 덕수궁
-      const NLatLng(37.5665, 126.9780), // 서울시청 (닫기)
-    ];
+    final coordinates = location.geometry.coordinates
+        .expand((list) => list)
+        .expand((list) => list)
+        .map((coord) => NLatLng(coord[1], coord[0]))
+        .toList();
 
     final polyline = NPolygonOverlay(
       id: 'polyline1',
@@ -128,49 +131,111 @@ class _MapPageState extends State<MapPage> {
     _mapController!.addOverlay(polyline);
   }
 
-  // Step Control Methods
-  void _onDrawDestination() {
-    setState(() {
-      _step = MapStep.confirm;
-      _selectedLocation = "서울시 강남구";
-      _distance = "2.5km";
-      _duration = "15분";
-    });
+  void _clearOverlays() {
+    if (_mapController != null) {
+      for (var overlay in _overlays) {
+        _mapController?.deleteOverlay(overlay.info);
+      }
+      _overlays.clear();
+    }
   }
 
-  void _onRedrawDestination() {
+  Future<void> _setDestination(
+      RandomLocationResponse location, double zoom) async {
     setState(() {
-      _step = MapStep.confirm;
+      _selectedLocation = location.local;
+      _distance = _tempDistance;
+      _duration = _tempDuration;
     });
+
+    await _updateMapCamera(NLatLng(location.lat, location.lon), zoom);
+    _drawPolyline(location);
   }
 
-  void _onConfirmDestination() {
-    setState(() {
-      _step = MapStep.navigation;
-    });
+  Future<void> _onDrawDestination() async {
+    try {
+      final location = await mapViewModel.getRandomLocation();
+      setState(() {
+        _step = MapStep.confirm;
+      });
+      await _setDestination(location, _destinationZoom);
+    } catch (e) {
+      _showErrorSnackBar('목적지를 가져오는데 실패했습니다.');
+    }
+  }
+
+  Future<void> _onRedrawDestination() async {
+    try {
+      final location = await mapViewModel.getRandomLocation();
+      _clearOverlays();
+      await _setDestination(location, _redrawZoom);
+    } catch (e) {
+      _showErrorSnackBar('목적지를 가져오는데 실패했습니다.');
+    }
+  }
+
+  Future<void> _onConfirmDestination() async {
+    try {
+      setState(() {
+        _isLoading = true;
+      });
+
+      await mapViewModel.startTour();
+
+      if (!mounted) return;
+
+      setState(() {
+        _step = MapStep.navigation;
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        _isLoading = false;
+      });
+      _showErrorSnackBar('투어를 시작하는데 실패했습니다.');
+    }
   }
 
   void _onEndNavigation() {
     setState(() {
       _step = MapStep.pick;
+      _selectedLocation = "";
+      _distance = "";
+      _duration = "";
     });
+    _clearOverlays();
+  }
+
+  Future<void> _checkCurrentTour() async {
+    try {
+      final tourInfo = await mapViewModel.getOwnTourInfo();
+      if (!mounted) return;
+
+      if (tourInfo != null) {
+        setState(() {
+          _step = MapStep.navigation;
+          _selectedLocation = tourInfo.local;
+          _distance = _tempDistance;
+          _duration = _tempDuration;
+        });
+        await _setDestination(tourInfo, _destinationZoom);
+      }
+    } catch (e) {
+      print('현재 투어 정보 확인 실패: $e');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(children: [
-        NaverMap(
-          options: const NaverMapViewOptions(
-            indoorEnable: true,
-            locationButtonEnable: false,
-            consumeSymbolTapEvents: false,
-          ),
+        NaverMapView(
           onMapReady: (controller) async {
             _mapController = controller;
             mapControllerCompleter.complete(controller);
             await _initializeLocation();
-            _drawPolyline();
           },
         ),
         DraggableScrollableSheet(
@@ -210,9 +275,7 @@ class _MapPageState extends State<MapPage> {
   Widget _buildStepWidget() {
     switch (_step) {
       case MapStep.pick:
-        return PickView(
-          onDrawDestination: _onDrawDestination,
-        );
+        return PickView(onDrawDestination: _onDrawDestination);
       case MapStep.confirm:
         return ConfirmView(
           selectedLocation: _selectedLocation,
@@ -225,7 +288,46 @@ class _MapPageState extends State<MapPage> {
           distance: _distance,
           duration: _duration,
           onEndNavigation: _onEndNavigation,
+          targetInfo: mapViewModel.getTargetInfo(),
         );
     }
+  }
+}
+
+class NaverMapView extends StatefulWidget {
+  final Function(NaverMapController) onMapReady;
+
+  const NaverMapView({
+    super.key,
+    required this.onMapReady,
+  });
+
+  @override
+  State<NaverMapView> createState() => _NaverMapViewState();
+}
+
+class _NaverMapViewState extends State<NaverMapView> {
+  NaverMapController? _controller;
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    _controller = null;
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return NaverMap(
+      options: const NaverMapViewOptions(
+        indoorEnable: true,
+        locationButtonEnable: false,
+        consumeSymbolTapEvents: false,
+      ),
+      onMapReady: (controller) {
+        _controller = controller;
+        widget.onMapReady(controller);
+      },
+    );
   }
 }

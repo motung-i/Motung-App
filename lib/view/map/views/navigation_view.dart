@@ -5,12 +5,14 @@ import 'package:motunge/view/component/button.dart';
 import 'package:motunge/view/designSystem/fonts.dart';
 import 'package:motunge/view/designSystem/colors.dart';
 import 'package:motunge/view/map/components/empty_data_widget.dart';
+import 'package:motunge/model/map/target_info_response.dart';
 
 class NavigationView extends StatelessWidget {
   final String selectedLocation;
   final String distance;
   final String duration;
   final VoidCallback onEndNavigation;
+  final TargetInfoResponse? targetInfo;
 
   const NavigationView({
     super.key,
@@ -18,6 +20,7 @@ class NavigationView extends StatelessWidget {
     required this.distance,
     required this.duration,
     required this.onEndNavigation,
+    this.targetInfo,
   });
 
   @override
@@ -33,17 +36,48 @@ class NavigationView extends StatelessWidget {
         SizedBox(height: 28.h),
         ButtonComponent(isEnable: true, text: "길 안내"),
         SizedBox(height: 28.h),
-        Text("리뷰"),
+        Text("리뷰", style: GlobalFontDesignSystem.m2Semi),
         SizedBox(height: 4.h),
         EmptyDataWidget(text: "아직 해당 장소의 리뷰가 없어요"),
         SizedBox(height: 28.h),
-        Text("AI 추천"),
+        Text("AI 추천", style: GlobalFontDesignSystem.m2Semi),
         SizedBox(height: 4.h),
-        EmptyDataWidget(text: "AI 추천을 가져올 수 없어요."),
+        if (targetInfo != null)
+          Container(
+            padding: EdgeInsets.all(16.w),
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              borderRadius: BorderRadius.circular(12.r),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  targetInfo!.restaurantComment,
+                  style: GlobalFontDesignSystem.m3Regular
+                      .copyWith(color: DiaryMainGrey.grey800),
+                ),
+                SizedBox(height: 8.h),
+                Text(
+                  targetInfo!.sightseeingSpotsComment,
+                  style: GlobalFontDesignSystem.m3Regular
+                      .copyWith(color: DiaryMainGrey.grey800),
+                ),
+                SizedBox(height: 8.h),
+                Text(
+                  targetInfo!.cultureComment,
+                  style: GlobalFontDesignSystem.m3Regular
+                      .copyWith(color: DiaryMainGrey.grey800),
+                ),
+              ],
+            ),
+          )
+        else
+          EmptyDataWidget(text: "AI 추천을 가져올 수 없어요."),
         SizedBox(height: 28.h),
-        Text("파노라마"),
+        Text("파노라마", style: GlobalFontDesignSystem.m2Semi),
         SizedBox(height: 4.h),
-        EmptyDataWidget(text: "사진을 가져올 수 없어요."),
+        EmptyDataWidget(text: "파노라마 이미지를 가져올 수 없어요."),
         SizedBox(height: 25.h),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
