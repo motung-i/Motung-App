@@ -2,7 +2,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:motunge/model/map/districts_response.dart';
 import 'package:motunge/model/map/random_location_response.dart';
 import 'package:motunge/model/map/regions_response.dart';
-
+import 'package:motunge/model/map/target_info_response.dart';
 import 'package:motunge/network/dio.dart';
 
 class MapDataSource {
@@ -42,5 +42,19 @@ class MapDataSource {
     final response = await dio.get(
         '${dotenv.env['API_URL']}/tour/filter/district?country=KOREA&region=$region');
     return DistrictsResponse.fromJson(response.data);
+  }
+
+  Future<void> startTour() async {
+    await dio.post('${dotenv.env['API_URL']}/tour');
+  }
+
+  Future<RandomLocationResponse> getOwnTourInfo() async {
+    final response = await dio.get('${dotenv.env['API_URL']}/tour');
+    return RandomLocationResponse.fromJson(response.data);
+  }
+
+  Future<TargetInfoResponse> getTourTargetInfo() async {
+    final response = await dio.get('${dotenv.env['API_URL']}/tour/comment');
+    return TargetInfoResponse.fromJson(response.data);
   }
 }
