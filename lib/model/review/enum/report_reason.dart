@@ -1,0 +1,7 @@
+enum ReportReason {
+  PERSONAL_INFORMATION,
+  PROMOTION,
+  ABUSE,
+  SENSATIONALISM,
+  ETC
+}

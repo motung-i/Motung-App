@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:motunge/dataSource/map.dart';
 import 'package:motunge/view/designSystem/colors.dart';
 import 'package:motunge/view/designSystem/fonts.dart';
 
@@ -12,19 +13,9 @@ class ReviewList extends StatefulWidget {
 }
 
 class _ReviewListState extends State<ReviewList> {
+  final MapDataSource _mapDataSource = MapDataSource();
   bool _showPhotoReviewsOnly = false;
-  final List<String> _regions = [
-    '전북',
-    '전남·광주',
-    '경북',
-    '경남',
-    '충북',
-    '충남',
-    '인천',
-    '서울',
-    '강원',
-    '제주'
-  ];
+  List<String> _regions = [];
 
   Map<String, List<ReviewData>> _reviewsByRegion = {};
   bool _isLoading = true;
@@ -32,7 +23,10 @@ class _ReviewListState extends State<ReviewList> {
   @override
   void initState() {
     super.initState();
-    _fetchReviews();
+    _mapDataSource.getRegions().then((regionsData) {
+      _regions = regionsData.regions;
+      _fetchReviews();
+    });
   }
 
   Future<void> _fetchReviews() async {
@@ -50,7 +44,7 @@ class _ReviewListState extends State<ReviewList> {
         (index) => ReviewData(
           userName: '사용자${index + 1}',
           content:
-              '${region}에 있는 멋진 장소입니다. 정말 추천합니다! 일정이 잘 맞아서 좋았고 날씨도 좋아서 더 좋았어요.',
+              '$region에 있는 멋진 장소입니다. 정말 추천합니다! 일정이 잘 맞아서 좋았고 날씨도 좋아서 더 좋았어요.',
           date: '2024.02.${10 + index}',
           location: '$region, 평화동',
           isRecommended: index % 3 == 0,
