@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:motunge/dataSource/auth.dart';
-import 'package:motunge/model/auth/auth_state.dart';
+import 'package:motunge/model/auth/enum/auth_state.dart';
 import 'package:motunge/model/auth/google_oauth_response.dart';
 import 'package:motunge/model/auth/token_refresh_request.dart';
 
