@@ -44,7 +44,11 @@ class AuthNotifier extends ChangeNotifier {
     final storage = FlutterSecureStorage();
     await storage.write(key: 'refreshToken', value: response.refreshToken);
     await storage.write(key: 'accessToken', value: response.accessToken);
-    _status = AuthStatus.authenticated;
+    notifyListeners();
+  }
+
+  void setStatus(AuthStatus status) {
+    _status = status;
     notifyListeners();
   }
 
