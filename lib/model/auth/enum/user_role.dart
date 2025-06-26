@@ -1,0 +1,6 @@
+enum UserRole {
+  ROLE_PENDING,
+  ROLE_USER,
+  ROLE_ADMIN,
+  ROLE_REMOVED,
+}

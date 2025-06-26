@@ -1,12 +1,38 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:motunge/constants/app_constants.dart';
+import 'package:motunge/model/auth/profile_response.dart';
+import 'package:motunge/view/component/menu_list_item.dart';
 import 'package:motunge/view/designSystem/colors.dart';
 import 'package:motunge/view/designSystem/fonts.dart';
+import 'package:motunge/viewModel/auth_viewmodel.dart';
 
-class MyPage extends StatelessWidget {
+class MyPage extends StatefulWidget {
   const MyPage({super.key});
+
+  @override
+  State<MyPage> createState() => _MyPageState();
+}
+
+class _MyPageState extends State<MyPage> {
+  ProfileResponse? profile;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    final authViewModel = AuthViewModel();
+    final profileData = await authViewModel.getProfile();
+    if (mounted) {
+      setState(() {
+        profile = profileData;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -18,25 +44,15 @@ class MyPage extends StatelessWidget {
                   children: [
                     SizedBox(height: 60.h),
                     Text(
-                      "이지혁",
+                      profile?.nickname ?? AppConstants.loadingText,
                       style: GlobalFontDesignSystem.m1Semi,
                     ),
                     SizedBox(
                       height: 60.h,
                     ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          "내가 쓴 리뷰",
-                          style: GlobalFontDesignSystem.m3Regular,
-                        ),
-                        SvgPicture.asset(
-                          "assets/images/arrow-right.svg",
-                          width: 24.w,
-                          height: 24.h,
-                        )
-                      ],
+                    MenuListItem(
+                      title: "내가 쓴 리뷰",
+                      onTap: () => context.push('/my/reviews'),
                     ),
                     SizedBox(
                       height: 24.h,
@@ -48,22 +64,9 @@ class MyPage extends StatelessWidget {
                     SizedBox(
                       height: 24.h,
                     ),
-                    GestureDetector(
+                    MenuListItem(
+                      title: "시스템",
                       onTap: () => context.push("/my/system-setting"),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            "시스템",
-                            style: GlobalFontDesignSystem.m3Regular,
-                          ),
-                          SvgPicture.asset(
-                            "assets/images/arrow-right.svg",
-                            width: 24.w,
-                            height: 24.h,
-                          )
-                        ],
-                      ),
                     )
                   ],
                 ))));
