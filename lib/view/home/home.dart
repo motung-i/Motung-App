@@ -140,6 +140,9 @@ class _MyHomePageState extends State<MyHomePage> {
                               borderRadius:
                                   BorderRadius.all(Radius.circular(8)),
                             ),
+                            child: Image.asset(
+                              "assets/images/music-recommend.png",
+                            ),
                           ),
                           Container(
                             width: 163.w,
@@ -148,6 +151,9 @@ class _MyHomePageState extends State<MyHomePage> {
                               color: Color(0xffd9d9d9),
                               borderRadius:
                                   BorderRadius.all(Radius.circular(8)),
+                            ),
+                            child: Image.asset(
+                              "assets/images/item-recommend.png",
                             ),
                           )
                         ],
