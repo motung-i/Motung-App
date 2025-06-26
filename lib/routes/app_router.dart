@@ -7,7 +7,9 @@ import 'package:motunge/view/home/home.dart';
 import 'package:motunge/view/login/login.dart';
 import 'package:motunge/view/my/change_nickname.dart';
 import 'package:motunge/view/my/my.dart';
+import 'package:motunge/view/my/my_reviews.dart';
 import 'package:motunge/view/onBoarding/onboarding.dart';
+import 'package:motunge/view/review/review_image_attachment.dart';
 import 'package:motunge/view/review/review_list.dart';
 import 'package:motunge/view/review/review_write.dart';
 import 'package:motunge/view/map/map.dart';
@@ -52,12 +54,40 @@ class AppRouter {
       GoRoute(
         path: '/review/write',
         name: 'reviewWrite',
-        builder: (context, state) => const ReviewWrite(),
+        builder: (context, state) {
+          final location = state.uri.queryParameters['location'] ?? '';
+          return ReviewWrite(location: location);
+        },
+      ),
+      GoRoute(
+        path: '/review/attach-image',
+        name: 'reviewAttachImage',
+        builder: (context, state) {
+          final location = state.uri.queryParameters['location'] ?? '';
+          final isRecommend =
+              state.uri.queryParameters['isRecommend'] == 'true';
+          final description = state.uri.queryParameters['description'] ?? '';
+          return ReviewImageAttachmentPage(
+            location: location,
+            isRecommend: isRecommend,
+            description: description,
+          );
+        },
       ),
       GoRoute(
         path: '/my/change-nickname',
         name: 'changeNickname',
         builder: (context, state) => const ChangeNickname(),
+      ),
+      GoRoute(
+        path: '/my/reviews',
+        name: 'myReviews',
+        builder: (context, state) => const MyReviewsPage(),
+      ),
+      GoRoute(
+        path: '/my/system-setting',
+        name: 'systemSetting',
+        builder: (context, state) => const SystemSettingPage(),
       ),
       ShellRoute(
         builder: (context, state, child) {
@@ -83,11 +113,6 @@ class AppRouter {
             path: '/my',
             name: 'my',
             builder: (context, state) => const MyPage(),
-          ),
-          GoRoute(
-            path: '/my/system-setting',
-            name: 'systemSetting',
-            builder: (context, state) => const SystemSettingPage(),
           ),
         ],
       ),
