@@ -1,19 +1,17 @@
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:motunge/constants/app_constants.dart';
+import 'package:motunge/dataSource/base_data_source.dart';
 import 'package:motunge/model/map/districts_response.dart';
 import 'package:motunge/model/map/random_location_response.dart';
 import 'package:motunge/model/map/regions_response.dart';
 import 'package:motunge/model/map/target_info_response.dart';
-import 'package:motunge/network/dio.dart';
 
-class MapDataSource {
-  final dio = AppDio.getInstance();
-
+class MapDataSource extends BaseDataSource {
   Future<RandomLocationResponse> getRandomLocation({
     List<String>? regions,
     List<String>? districts,
   }) async {
     final queryParams = <String, dynamic>{
-      'country': 'KOREA',
+      'country': AppConstants.countryKorea,
     };
 
     if (regions != null && regions.isNotEmpty) {
@@ -25,7 +23,7 @@ class MapDataSource {
     }
 
     final response = await dio.post(
-      '${dotenv.env['API_URL']}/tour/random',
+      getUrl('/tour/random'),
       queryParameters: queryParams,
     );
 
@@ -33,28 +31,36 @@ class MapDataSource {
   }
 
   Future<RegionsDataResponse> getRegions() async {
-    final response = await dio
-        .get('${dotenv.env['API_URL']}/tour/filter/region?country=KOREA');
+    final response = await dio.get(
+        getUrl('/tour/filter/region?country=${AppConstants.countryKorea}'));
     return RegionsDataResponse.fromJson(response.data);
   }
 
   Future<DistrictsResponse> getDistricts(String region) async {
-    final response = await dio.get(
-        '${dotenv.env['API_URL']}/tour/filter/district?country=KOREA&region=$region');
+    final response = await dio.get(getUrl(
+        '/tour/filter/district?country=${AppConstants.countryKorea}&region=$region'));
     return DistrictsResponse.fromJson(response.data);
   }
 
   Future<void> startTour() async {
-    await dio.post('${dotenv.env['API_URL']}/tour');
+    await dio.post(getUrl('/tour'));
   }
 
   Future<RandomLocationResponse> getOwnTourInfo() async {
-    final response = await dio.get('${dotenv.env['API_URL']}/tour');
+    final response = await dio.get(getUrl('/tour'));
     return RandomLocationResponse.fromJson(response.data);
   }
 
   Future<TargetInfoResponse> getTourTargetInfo() async {
-    final response = await dio.get('${dotenv.env['API_URL']}/tour/comment');
+    final response = await dio.get(getUrl('/tour/comment'));
     return TargetInfoResponse.fromJson(response.data);
+  }
+
+  Future<void> endTour() async {
+    await dio.delete(getUrl('/tour'));
+  }
+
+  Future<void> requestGenerateTourInfo() async {
+    await dio.post(getUrl('/tour/comment'));
   }
 }

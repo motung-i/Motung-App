@@ -1,35 +1,55 @@
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:motunge/dataSource/base_data_source.dart';
 import 'package:motunge/model/auth/google_oauth_request.dart';
 import 'package:motunge/model/auth/google_oauth_response.dart';
 import 'package:motunge/model/auth/is_user_register_response.dart';
+import 'package:motunge/model/auth/profile_response.dart';
 import 'package:motunge/model/auth/register_request.dart';
 import 'package:motunge/model/auth/token_refresh_request.dart';
-import 'package:motunge/network/dio.dart';
 
-class AuthDataSource {
-  final dio = AppDio.getInstance();
-
+class AuthDataSource extends BaseDataSource {
   Future<GoogleOAuthLoginResponse> googleLogin(
       GoogleOAuthLoginRequest request) async {
-    final response = await dio.post('${dotenv.env['API_URL']}/auth/login',
-        data: request.toJson());
+    final response =
+        await dio.post(getUrl('/auth/login'), data: request.toJson());
     return GoogleOAuthLoginResponse.fromJson(response.data);
   }
 
   Future<IsUserRegisterResponse> checkRegister() async {
-    final response =
-        await dio.get('${dotenv.env['API_URL']}/auth/check-register');
+    final response = await dio.get(getUrl('/auth/check-register'));
     return IsUserRegisterResponse.fromJson(response.data);
   }
 
   Future<void> register(RegisterRequest request) async {
-    await dio.post('${dotenv.env['API_URL']}/auth/register', data: request);
+    await dio.post(getUrl('/auth/register'), data: request);
   }
 
   Future<GoogleOAuthLoginResponse> refreshToken(
       TokenRefreshRequest request) async {
-    final response = await dio.post('${dotenv.env['API_URL']}/auth/refresh',
-        data: request.toJson());
+    final response =
+        await dio.post(getUrl('/auth/refresh'), data: request.toJson());
     return GoogleOAuthLoginResponse.fromJson(response.data);
+  }
+
+  Future<void> logout() async {
+    await dio.post(getUrl('/auth/logout'));
+  }
+
+  Future<void> deleteAccount() async {
+    await dio.delete(getUrl('/auth/delete-account'));
+  }
+
+  Future<ProfileResponse> getProfile() async {
+    final response = await dio.get(getUrl('/user'));
+    return ProfileResponse.fromJson(response.data);
+  }
+
+  Future<void> changeNickname(String nickname) async {
+    await dio.patch(getUrl('/user/nickname'), data: {
+      'nickname': nickname,
+    });
+  }
+
+  Future<void> deleteUser() async {
+    await dio.delete(getUrl('/user'));
   }
 }
