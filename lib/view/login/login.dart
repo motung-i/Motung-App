@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:motunge/constants/app_constants.dart';
 import 'package:motunge/routes/navigation_helper.dart';
+import 'package:motunge/utils/error_handler.dart';
 import 'package:motunge/view/designSystem/fonts.dart';
 import 'package:motunge/viewModel/auth_viewmodel.dart';
 
@@ -21,18 +23,16 @@ class _LoginPageState extends State<LoginPage> {
 
     try {
       final response = await AuthViewModel().googleLogin();
-      if (response == false) {
-        Navigation.toOnboarding();
-      } else if (response == true) {
+      if (response == true) {
         Navigation.toHome();
+      } else if (response == false) {
+        Navigation.toOnboarding();
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('로그인 중 오류가 발생했습니다. 다시 시도해주세요.'),
-            backgroundColor: Colors.red,
-          ),
+        ErrorHandler.showErrorSnackBar(
+          context,
+          AppConstants.loginErrorMessage,
         );
       }
     } finally {
@@ -91,7 +91,9 @@ class _LoginPageState extends State<LoginPage> {
                       height: 24.h,
                     ),
                     Text(
-                      _isLoading ? "로그인 중..." : "Google로 시작하기",
+                      _isLoading
+                          ? AppConstants.loginLoadingText
+                          : AppConstants.loginButtonText,
                       style: GlobalFontDesignSystem.m3Semi.copyWith(
                         color: _isLoading ? Colors.grey : Colors.black,
                       ),
@@ -121,7 +123,8 @@ class _LoginPageState extends State<LoginPage> {
                       width: 24.w,
                       height: 24.h,
                     ),
-                    Text("Apple로 시작하기", style: GlobalFontDesignSystem.m3Semi)
+                    Text(AppConstants.appleLoginText,
+                        style: GlobalFontDesignSystem.m3Semi)
                   ],
                 ),
               ),

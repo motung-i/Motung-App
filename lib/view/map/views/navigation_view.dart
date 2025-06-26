@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:go_router/go_router.dart';
 import 'package:motunge/view/component/button.dart';
+import 'package:motunge/view/component/confirmation_dialog.dart';
 import 'package:motunge/view/designSystem/fonts.dart';
 import 'package:motunge/view/designSystem/colors.dart';
 import 'package:motunge/view/map/components/empty_data_widget.dart';
@@ -83,7 +85,17 @@ class NavigationView extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             GestureDetector(
-              onTap: onEndNavigation,
+              onTap: () {
+                ConfirmationDialog.show(
+                  context,
+                  title: "정말 여행을 마칠까요?",
+                  content: selectedLocation,
+                  onConfirm: () {
+                    context.push(
+                        '/review/write?location=${Uri.encodeComponent(selectedLocation)}');
+                  },
+                );
+              },
               child: Text(
                 "여행종료",
                 style: GlobalFontDesignSystem.m3Regular.copyWith(
