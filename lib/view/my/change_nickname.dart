@@ -1,12 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 import 'package:motunge/view/component/button.dart';
 import 'package:motunge/view/component/input.dart';
 import 'package:motunge/view/component/topBar.dart';
 import 'package:motunge/view/designSystem/fonts.dart';
+import 'package:motunge/viewModel/auth_viewmodel.dart';
 
-class ChangeNickname extends StatelessWidget {
+class ChangeNickname extends StatefulWidget {
   const ChangeNickname({super.key});
+
+  @override
+  State<ChangeNickname> createState() => _ChangeNicknameState();
+}
+
+class _ChangeNicknameState extends State<ChangeNickname> {
+  RegExp regExp = RegExp(
+    r"^(?![ㄱ-ㅎ]+$)(?![ㅏ-ㅣ]+$)[가-힣a-zA-Z0-9]+$",
+    caseSensitive: false,
+    multiLine: false,
+  );
+  String _nickname = "";
+
+  void _onNicknameChanged(String value) {
+    setState(() {
+      _nickname = value;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,14 +59,19 @@ class ChangeNickname extends StatelessWidget {
                         InputComponent(
                             hintText: "닉네임을 입력하세요",
                             isLong: false,
-                            onChanged: (value) {
-                              debugPrint(value);
-                            })
+                            onChanged: _onNicknameChanged)
                       ],
                     ),
                     Spacer(),
                     ButtonComponent(
-                        isEnable: true, text: "완료", onPressed: () {}),
+                        isEnable:
+                            _nickname.isNotEmpty && regExp.hasMatch(_nickname),
+                        text: "완료",
+                        onPressed: () async {
+                          await AuthViewModel().changeNickname(_nickname);
+                          if (!context.mounted) return;
+                          context.go('/my');
+                        }),
                   ],
                 )),
           )
