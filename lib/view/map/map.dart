@@ -37,7 +37,6 @@ class _MapPageState extends State<MapPage> {
   String _selectedLocation = "";
   String _distance = "";
   String _duration = "";
-  bool _isLoading = false;
 
   @override
   void initState() {
@@ -176,24 +175,23 @@ class _MapPageState extends State<MapPage> {
 
   Future<void> _onConfirmDestination() async {
     try {
-      setState(() {
-        _isLoading = true;
-      });
-
       await mapViewModel.startTour();
+      // AI 정보 생성 요청
+      mapViewModel.requestGenerateTourInfo().then((_) {
+        if (!mounted) return;
+        setState(() {});
+      }).catchError((e) {
+        debugPrint('AI 정보 생성 실패: $e');
+      });
 
       if (!mounted) return;
 
       setState(() {
         _step = MapStep.navigation;
-        _isLoading = false;
       });
     } catch (e) {
       if (!mounted) return;
 
-      setState(() {
-        _isLoading = false;
-      });
       _showErrorSnackBar('투어를 시작하는데 실패했습니다.');
     }
   }
@@ -204,6 +202,7 @@ class _MapPageState extends State<MapPage> {
       _selectedLocation = "";
       _distance = "";
       _duration = "";
+      mapViewModel.endTour();
     });
     _clearOverlays();
   }
@@ -223,7 +222,7 @@ class _MapPageState extends State<MapPage> {
         await _setDestination(tourInfo, _destinationZoom);
       }
     } catch (e) {
-      print('현재 투어 정보 확인 실패: $e');
+      debugPrint('현재 투어 정보 확인 실패: $e');
     }
   }
 
@@ -256,6 +255,20 @@ class _MapPageState extends State<MapPage> {
               child: CustomScrollView(
                 controller: scrollController,
                 slivers: [
+                  if (_step == MapStep.navigation)
+                    SliverToBoxAdapter(
+                      child: Center(
+                        child: Container(
+                          decoration: const BoxDecoration(
+                            color: Color(0xffEFF0F2),
+                            borderRadius: BorderRadius.all(Radius.circular(2)),
+                          ),
+                          height: 4,
+                          width: 80,
+                          margin: const EdgeInsets.symmetric(vertical: 16),
+                        ),
+                      ),
+                    ),
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: EdgeInsets.symmetric(

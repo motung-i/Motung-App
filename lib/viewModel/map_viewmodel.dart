@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:motunge/dataSource/map.dart';
 import 'package:motunge/model/map/districts_response.dart';
@@ -48,7 +49,7 @@ class MapViewmodel {
       await _mapDataSource.startTour();
       await _updateTargetInfo();
     } catch (e) {
-      print('투어 시작 실패: $e');
+      debugPrint('투어 시작 실패: $e');
       rethrow;
     }
   }
@@ -59,7 +60,7 @@ class MapViewmodel {
       await _updateTargetInfo();
       return tourInfo;
     } catch (e) {
-      print('투어 정보 조회 실패: $e');
+      debugPrint('투어 정보 조회 실패: $e');
       return null;
     }
   }
@@ -68,10 +69,30 @@ class MapViewmodel {
     try {
       _targetInfo = await _mapDataSource.getTourTargetInfo();
     } catch (e) {
-      print('타겟 정보 업데이트 실패: $e');
+      debugPrint('타겟 정보 업데이트 실패: $e');
       _targetInfo = null;
     }
   }
 
   TargetInfoResponse? getTargetInfo() => _targetInfo;
+
+  Future<void> endTour() async {
+    try {
+      await _mapDataSource.endTour();
+      _targetInfo = null;
+    } catch (e) {
+      debugPrint('투어 종료 실패: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> requestGenerateTourInfo() async {
+    try {
+      await _mapDataSource.requestGenerateTourInfo();
+      await _updateTargetInfo();
+    } catch (e) {
+      debugPrint('AI 정보 생성 요청 실패: $e');
+      rethrow;
+    }
+  }
 }
