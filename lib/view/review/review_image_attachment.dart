@@ -5,6 +5,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:heif_converter/heif_converter.dart';
+import 'package:path/path.dart' as path;
 import 'package:motunge/dataSource/review.dart';
 import 'package:motunge/model/review/review_request.dart';
 import 'package:motunge/view/component/button.dart';
@@ -41,8 +43,36 @@ class _ReviewImageAttachmentPageState extends State<ReviewImageAttachmentPage> {
     final XFile? image = await picker.pickImage(source: ImageSource.gallery);
 
     if (image != null) {
+      File imageFile = File(image.path);
+
+      // HEIC 파일인지 확인 후 변환
+      if (path.extension(image.path).toLowerCase() == '.heic' ||
+          path.extension(image.path).toLowerCase() == '.heif') {
+        try {
+          // HEIC를 JPG로 변환
+          String jpgPath = image.path.replaceAll(
+              RegExp(r'\.(heic|heif)$', caseSensitive: false), '.jpg');
+          String? convertedPath = await HeifConverter.convert(
+            image.path,
+            output: jpgPath,
+          );
+          if (convertedPath != null) {
+            imageFile = File(convertedPath);
+          } else {
+            throw Exception('변환된 파일 경로가 null입니다');
+          }
+        } catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('이미지 변환에 실패했습니다: $e')),
+            );
+          }
+          return;
+        }
+      }
+
       setState(() {
-        _images.add(File(image.path));
+        _images.add(imageFile);
       });
     }
   }
