@@ -17,7 +17,7 @@ class ButtonComponent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: isEnable ? onPressed : null,
+      onTap: onPressed,
       child: Container(
         height: 48.h,
         decoration: BoxDecoration(
