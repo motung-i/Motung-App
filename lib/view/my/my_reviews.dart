@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:motunge/dataSource/review.dart';
 import 'package:motunge/model/review/reviews_response.dart';
 import 'package:motunge/view/component/recommend_badge.dart';

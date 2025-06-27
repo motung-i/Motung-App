@@ -24,9 +24,9 @@ class _ReviewListState extends State<ReviewList> {
   String _searchQuery = '';
   int _currentTabIndex = 0;
 
-  Map<String, List<Review>> _reviewsByRegion = {};
-  Map<String, bool> _isLoadingByRegion = {};
-  Map<String, bool> _isInitializedByRegion = {};
+  final Map<String, List<Review>> _reviewsByRegion = {};
+  final Map<String, bool> _isLoadingByRegion = {};
+  final Map<String, bool> _isInitializedByRegion = {};
 
   @override
   void initState() {
