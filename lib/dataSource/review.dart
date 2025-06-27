@@ -48,11 +48,10 @@ class ReviewDataSource extends BaseDataSource {
   }
 
   Future<void> writeReview(ReviewRequest request) async {
-    // 이미지가 있는 경우 FormData 사용
-    if (request.images.isNotEmpty) {
-      final formData = FormData();
+    final formData = FormData();
 
-      // 이미지 파일 추가
+    // 이미지 파일 추가 (있는 경우만)
+    if (request.images.isNotEmpty) {
       for (var image in request.images) {
         formData.files.add(
           MapEntry(
@@ -64,22 +63,26 @@ class ReviewDataSource extends BaseDataSource {
           ),
         );
       }
-
-      // 리뷰 데이터 추가
-      formData.fields.add(
-        MapEntry('request', jsonEncode(request.request.toJson())),
-      );
-
-      await dio.post(
-        getUrl('/review'),
-        data: formData,
-      );
-    } else {
-      // 이미지가 없는 경우 일반 JSON 요청
-      await dio.post(
-        getUrl('/review'),
-        data: request.request.toJson(),
-      );
     }
+
+    // 리뷰 데이터를 JSON blob으로 추가
+    final requestJson = jsonEncode(request.request.toJson());
+    formData.files.add(
+      MapEntry(
+        'request',
+        MultipartFile.fromString(
+          requestJson,
+          contentType: DioMediaType.parse('application/json'),
+        ),
+      ),
+    );
+
+    await dio.post(
+      getUrl('/review'),
+      data: formData,
+      options: Options(
+        contentType: 'multipart/form-data',
+      ),
+    );
   }
 }
