@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:go_router/go_router.dart';
 import 'package:motunge/view/component/button.dart';
 import 'package:motunge/view/component/input.dart';
 import 'package:motunge/view/component/topBar.dart';
 import 'package:motunge/view/designSystem/colors.dart';
 import 'package:motunge/view/designSystem/fonts.dart';
 import 'package:motunge/viewModel/auth_viewmodel.dart';
+import 'package:motunge/routes/app_router.dart';
+import 'package:motunge/model/auth/enum/auth_state.dart';
 
 class Onboarding extends StatefulWidget {
   const Onboarding({super.key});
@@ -18,6 +19,7 @@ class Onboarding extends StatefulWidget {
 class _OnboardingState extends State<Onboarding> {
   RegExp regExp = RegExp(r'^(?![ㄱ-ㅎ]+$)(?![ㅏ-ㅣ]+$)[가-힣a-zA-Z0-9]+$');
   String _nickname = "";
+  bool _isLoading = false;
 
   void _onNicknameChanged(String value) {
     setState(() {
@@ -25,9 +27,35 @@ class _OnboardingState extends State<Onboarding> {
     });
   }
 
+  Future<void> _onCompletePressed() async {
+    if (_isLoading) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      AuthViewModel authViewModel = AuthViewModel();
+      await authViewModel.register(_nickname);
+
+      AppRouter.authNotifier.setStatus(AuthStatus.authenticated);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('회원가입에 실패했습니다: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    AuthViewModel authViewModel = AuthViewModel();
     return Scaffold(
       body: SafeArea(
           child: Column(
@@ -54,13 +82,11 @@ class _OnboardingState extends State<Onboarding> {
                     height: 488.h,
                   ),
                   ButtonComponent(
-                    isEnable:
-                        _nickname.isNotEmpty && regExp.hasMatch(_nickname),
-                    text: "완료",
-                    onPressed: () {
-                      authViewModel.register(_nickname);
-                      context.go("/home");
-                    },
+                    isEnable: !_isLoading &&
+                        _nickname.isNotEmpty &&
+                        regExp.hasMatch(_nickname),
+                    text: _isLoading ? "처리 중..." : "완료",
+                    onPressed: _onCompletePressed,
                   )
                 ],
               ))
