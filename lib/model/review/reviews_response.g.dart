@@ -22,7 +22,7 @@ Map<String, dynamic> _$ReviewsResponseToJson(ReviewsResponse instance) =>
 
 Review _$ReviewFromJson(Map<String, dynamic> json) => Review(
       reviewId: json['review_id'] as String,
-      nickname: json['nickname'] as String,
+      nickname: json['nickname'] as String?,
       isRecommend: json['is_recommend'] as bool,
       local: json['local'] as String,
       description: json['description'] as String,

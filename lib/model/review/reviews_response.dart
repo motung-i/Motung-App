@@ -26,7 +26,7 @@ class Review {
   @JsonKey(name: 'review_id')
   final String reviewId;
 
-  final String nickname;
+  final String? nickname;
 
   @JsonKey(name: 'is_recommend')
   final bool isRecommend;

@@ -360,7 +360,7 @@ class _ReviewListState extends State<ReviewList> {
           style: GlobalFontDesignSystem.m2Semi,
         ),
         Text(
-          " · ${review.nickname}",
+          " · ${review.nickname ?? "탈퇴한 유저"}",
           style: GlobalFontDesignSystem.labelRegular.copyWith(
             color: DiaryMainGrey.grey700,
           ),

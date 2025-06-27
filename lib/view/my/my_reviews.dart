@@ -130,7 +130,7 @@ class _MyReviewsPageState extends State<MyReviewsPage> {
           style: GlobalFontDesignSystem.m2Semi,
         ),
         Text(
-          " · ${review.nickname}",
+          " · ${review.nickname ?? "익명"}",
           style: GlobalFontDesignSystem.labelRegular.copyWith(
             color: DiaryMainGrey.grey700,
           ),
