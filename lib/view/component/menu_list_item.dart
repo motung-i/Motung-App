@@ -17,19 +17,25 @@ class MenuListItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            title,
-            style: GlobalFontDesignSystem.m3Regular,
-          ),
-          SvgPicture.asset(
-            "assets/images/arrow-right.svg",
-            width: 24.w,
-            height: 24.h,
-          )
-        ],
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        width: double.infinity,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Text(
+                title,
+                style: GlobalFontDesignSystem.m3Regular,
+              ),
+            ),
+            SvgPicture.asset(
+              "assets/images/arrow-right.svg",
+              width: 24.w,
+              height: 24.h,
+            )
+          ],
+        ),
       ),
     );
   }
