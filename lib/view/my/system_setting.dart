@@ -10,6 +10,7 @@ import 'package:motunge/view/component/topBar.dart';
 import 'package:motunge/view/designSystem/colors.dart';
 import 'package:motunge/view/designSystem/fonts.dart';
 import 'package:motunge/viewModel/auth_viewmodel.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class SystemSettingPage extends StatelessWidget {
   const SystemSettingPage({super.key});
@@ -56,6 +57,27 @@ void _showDeleteAccountDialog(BuildContext context) {
   );
 }
 
+Future<void> _launchURL(BuildContext context, String url) async {
+  try {
+    final Uri uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('링크를 열 수 없습니다.')),
+        );
+      }
+    }
+  } catch (e) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('링크 열기 중 오류가 발생했습니다: $e')),
+      );
+    }
+  }
+}
+
 Widget _buildSystemConfig(BuildContext context) {
   return Column(
     children: [
@@ -63,14 +85,16 @@ Widget _buildSystemConfig(BuildContext context) {
       MenuListItem(
         title: "이용약관",
         onTap: () {
-          // TODO: 이용약관 페이지로 이동
+          _launchURL(context,
+              "https://alluring-glazer-720.notion.site/21fc0d7e799f8080857cf6cc8252aa07");
         },
       ),
       SizedBox(height: 24.h),
       MenuListItem(
         title: "개인정보 처리방침",
         onTap: () {
-          // TODO: 개인정보 처리방침 페이지로 이동
+          _launchURL(context,
+              'https://alluring-glazer-720.notion.site/21ec0d7e799f8035a69adf54a58f042c');
         },
       ),
       SizedBox(height: 24.h),
