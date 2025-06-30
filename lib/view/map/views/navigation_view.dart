@@ -36,7 +36,13 @@ class NavigationView extends StatelessWidget {
             style: GlobalFontDesignSystem.m3Regular
                 .copyWith(color: DiaryMainGrey.grey800)),
         SizedBox(height: 28.h),
-        ButtonComponent(isEnable: true, text: "길 안내"),
+        ButtonComponent(
+          isEnable: true,
+          text: "길 안내",
+          onPressed: () {
+            context.push('/map/route-selection');
+          },
+        ),
         SizedBox(height: 28.h),
         Text("리뷰", style: GlobalFontDesignSystem.m2Semi),
         SizedBox(height: 4.h),

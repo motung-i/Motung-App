@@ -1,6 +1,7 @@
 import 'package:motunge/constants/app_constants.dart';
 import 'package:motunge/dataSource/base_data_source.dart';
 import 'package:motunge/model/map/districts_response.dart';
+import 'package:motunge/model/map/naver_directions_response.dart';
 import 'package:motunge/model/map/random_location_response.dart';
 import 'package:motunge/model/map/regions_response.dart';
 import 'package:motunge/model/map/target_info_response.dart';
@@ -62,5 +63,12 @@ class MapDataSource extends BaseDataSource {
 
   Future<void> requestGenerateTourInfo() async {
     await dio.post(getUrl('/tour/comment'));
+  }
+
+  Future<NaverDirectionsResponse> getTourRoute(
+      double startLat, double startLon) async {
+    final response = await dio
+        .get(getUrl('/tour/route?startLat=$startLat&startLon=$startLon'));
+    return NaverDirectionsResponse.fromJson(response.data);
   }
 }
