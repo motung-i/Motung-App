@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:motunge/model/auth/enum/auth_state.dart';
 import 'package:motunge/state/auth_notifier.dart';
 import 'package:motunge/view/common/scaffold_with_nav_bar.dart';
 import 'package:motunge/view/home/home.dart';
 import 'package:motunge/view/login/login.dart';
+import 'package:motunge/view/map/views/route_selection_view.dart';
+import 'package:motunge/view/map/views/navigation_guide_view.dart';
 import 'package:motunge/view/my/change_nickname.dart';
 import 'package:motunge/view/my/my.dart';
 import 'package:motunge/view/my/my_reviews.dart';
@@ -14,6 +15,8 @@ import 'package:motunge/view/review/review_list.dart';
 import 'package:motunge/view/review/review_write.dart';
 import 'package:motunge/view/map/map.dart';
 import 'package:motunge/view/my/system_setting.dart';
+
+import '../model/auth/enum/auth_state.dart';
 
 class AppRouter {
   static final GlobalKey<NavigatorState> rootNavigatorKey =
@@ -88,6 +91,16 @@ class AppRouter {
         path: '/my/system-setting',
         name: 'systemSetting',
         builder: (context, state) => const SystemSettingPage(),
+      ),
+      GoRoute(
+        path: '/map/route-selection',
+        name: 'routeSelection',
+        builder: (context, state) => const RouteSelectionView(),
+      ),
+      GoRoute(
+        path: '/map/navigation-guide',
+        name: 'navigationGuide',
+        builder: (context, state) => const NavigationGuideView(),
       ),
       ShellRoute(
         builder: (context, state, child) {
