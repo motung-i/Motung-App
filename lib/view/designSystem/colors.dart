@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 class DiaryColor {
   static const Color globalMainColor = Color(0xFF125CED);
   static const Color systemErrorColor = Color(0xFFE54242);
+  static const Color black = Color(0xFF333333);
 }
 
 class DiaryMainGrey {

@@ -29,6 +29,8 @@ dependencies:
   heif_converter: ^1.0.1
   path: ^1.8.3
   url_launcher: ^6.3.1
+  intl: ^0.20.2
+  sign_in_with_apple: ^7.0.1
 
 dev_dependencies:
   flutter_test:

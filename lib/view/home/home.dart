@@ -129,35 +129,35 @@ class _MyHomePageState extends State<MyHomePage> {
                         style: GlobalFontDesignSystem.m3Regular,
                       ),
                       SizedBox(height: 24.h),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Container(
-                            width: 163.w,
-                            height: 146.h,
-                            decoration: BoxDecoration(
-                              color: Color(0xffd9d9d9),
-                              borderRadius:
-                                  BorderRadius.all(Radius.circular(8)),
-                            ),
-                            child: Image.asset(
-                              "assets/images/music-recommend.png",
-                            ),
-                          ),
-                          Container(
-                            width: 163.w,
-                            height: 146.h,
-                            decoration: BoxDecoration(
-                              color: Color(0xffd9d9d9),
-                              borderRadius:
-                                  BorderRadius.all(Radius.circular(8)),
-                            ),
-                            child: Image.asset(
-                              "assets/images/item-recommend.png",
-                            ),
-                          )
-                        ],
-                      )
+                      // Row(
+                      //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      //   children: [
+                      //     Container(
+                      //       width: 163.w,
+                      //       height: 146.h,
+                      //       decoration: BoxDecoration(
+                      //         color: Color(0xffd9d9d9),
+                      //         borderRadius:
+                      //             BorderRadius.all(Radius.circular(8)),
+                      //       ),
+                      //       child: Image.asset(
+                      //         "assets/images/music-recommend.png",
+                      //       ),
+                      //     ),
+                      //     Container(
+                      //       width: 163.w,
+                      //       height: 146.h,
+                      //       decoration: BoxDecoration(
+                      //         color: Color(0xffd9d9d9),
+                      //         borderRadius:
+                      //             BorderRadius.all(Radius.circular(8)),
+                      //       ),
+                      //       child: Image.asset(
+                      //         "assets/images/item-recommend.png",
+                      //       ),
+                      //     )
+                      //   ],
+                      // )
                     ],
                   ),
                 ),
