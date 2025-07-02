@@ -44,6 +44,34 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  Future<void> _handleAppleLogin() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final response = await AuthViewModel().appleLogin();
+      if (response == true) {
+        Navigation.toHome();
+      } else if (response == false) {
+        Navigation.toOnboarding();
+      }
+    } catch (e) {
+      if (mounted) {
+        ErrorHandler.showErrorSnackBar(
+          context,
+          AppConstants.loginErrorMessage,
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -106,12 +134,13 @@ class _LoginPageState extends State<LoginPage> {
               height: 15.h,
             ),
             GestureDetector(
-              onTap: () async {},
+              onTap: _isLoading ? null : _handleAppleLogin,
               child: Container(
                 height: 52.h,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: Color(0xffebebeb)),
+                  color: _isLoading ? Colors.grey[200] : Colors.white,
                 ),
                 padding: EdgeInsets.symmetric(horizontal: 88.w),
                 child: Row(
@@ -123,8 +152,14 @@ class _LoginPageState extends State<LoginPage> {
                       width: 24.w,
                       height: 24.h,
                     ),
-                    Text(AppConstants.appleLoginText,
-                        style: GlobalFontDesignSystem.m3Semi)
+                    Text(
+                      _isLoading
+                          ? AppConstants.loginLoadingText
+                          : AppConstants.appleLoginText,
+                      style: GlobalFontDesignSystem.m3Semi.copyWith(
+                        color: _isLoading ? Colors.grey : Colors.black,
+                      ),
+                    )
                   ],
                 ),
               ),

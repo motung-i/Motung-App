@@ -1,17 +1,24 @@
 import 'package:motunge/dataSource/base_data_source.dart';
+import 'package:motunge/model/auth/apple_oauth_request.dart';
 import 'package:motunge/model/auth/google_oauth_request.dart';
-import 'package:motunge/model/auth/google_oauth_response.dart';
+import 'package:motunge/model/auth/oauth_response.dart';
 import 'package:motunge/model/auth/is_user_register_response.dart';
 import 'package:motunge/model/auth/profile_response.dart';
 import 'package:motunge/model/auth/register_request.dart';
 import 'package:motunge/model/auth/token_refresh_request.dart';
 
 class AuthDataSource extends BaseDataSource {
-  Future<GoogleOAuthLoginResponse> googleLogin(
+  Future<OAuthLoginResponse> googleLogin(
       GoogleOAuthLoginRequest request) async {
-    final response =
-        await dio.post(getUrl('/auth/login'), data: request.toJson());
-    return GoogleOAuthLoginResponse.fromJson(response.data);
+    final response = await dio.post(getUrl('/auth/google/login/callback'),
+        data: request.toJson());
+    return OAuthLoginResponse.fromJson(response.data);
+  }
+
+  Future<OAuthLoginResponse> appleLogin(AppleOAuthLoginRequest request) async {
+    final response = await dio.post(getUrl('/auth/apple/login/callback'),
+        data: request.toJson());
+    return OAuthLoginResponse.fromJson(response.data);
   }
 
   Future<IsUserRegisterResponse> checkRegister() async {
@@ -23,11 +30,10 @@ class AuthDataSource extends BaseDataSource {
     await dio.post(getUrl('/auth/register'), data: request);
   }
 
-  Future<GoogleOAuthLoginResponse> refreshToken(
-      TokenRefreshRequest request) async {
+  Future<OAuthLoginResponse> refreshToken(TokenRefreshRequest request) async {
     final response =
         await dio.post(getUrl('/auth/refresh'), data: request.toJson());
-    return GoogleOAuthLoginResponse.fromJson(response.data);
+    return OAuthLoginResponse.fromJson(response.data);
   }
 
   Future<void> logout() async {

@@ -4,7 +4,7 @@ import 'package:dio/io.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:motunge/model/auth/token_refresh_request.dart';
-import 'package:motunge/model/auth/google_oauth_response.dart';
+import 'package:motunge/model/auth/oauth_response.dart';
 import 'package:motunge/routes/app_router.dart';
 
 abstract class AppDio {
@@ -114,7 +114,7 @@ class _AppDio with DioMixin implements Dio {
     ]);
   }
 
-  Future<GoogleOAuthLoginResponse> _refreshToken(String refreshToken) async {
+  Future<OAuthLoginResponse> _refreshToken(String refreshToken) async {
     final dio = Dio();
     dio.options.baseUrl = _baseUrl;
 
@@ -123,7 +123,7 @@ class _AppDio with DioMixin implements Dio {
       data: TokenRefreshRequest(refreshToken: refreshToken).toJson(),
     );
 
-    return GoogleOAuthLoginResponse.fromJson(response.data);
+    return OAuthLoginResponse.fromJson(response.data);
   }
 
   Future<Response<dynamic>> _retry(RequestOptions requestOptions) async {

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:motunge/dataSource/auth.dart';
 import 'package:motunge/model/auth/enum/auth_state.dart';
-import 'package:motunge/model/auth/google_oauth_response.dart';
+import 'package:motunge/model/auth/oauth_response.dart';
 import 'package:motunge/model/auth/token_refresh_request.dart';
 
 class AuthNotifier extends ChangeNotifier {
@@ -40,7 +40,7 @@ class AuthNotifier extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> login(GoogleOAuthLoginResponse response) async {
+  Future<void> login(OAuthLoginResponse response) async {
     final storage = FlutterSecureStorage();
     await storage.write(key: 'refreshToken', value: response.refreshToken);
     await storage.write(key: 'accessToken', value: response.accessToken);

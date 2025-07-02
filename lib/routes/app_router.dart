@@ -15,6 +15,7 @@ import 'package:motunge/view/review/review_list.dart';
 import 'package:motunge/view/review/review_write.dart';
 import 'package:motunge/view/map/map.dart';
 import 'package:motunge/view/my/system_setting.dart';
+import 'package:motunge/view/map/components/location_filter_page.dart';
 
 import '../model/auth/enum/auth_state.dart';
 
@@ -101,6 +102,22 @@ class AppRouter {
         path: '/map/navigation-guide',
         name: 'navigationGuide',
         builder: (context, state) => const NavigationGuideView(),
+      ),
+      GoRoute(
+        path: '/map/location-filter',
+        name: 'locationFilter',
+        builder: (context, state) {
+          final selectedRegions =
+              state.uri.queryParameters['selectedRegions']?.split(',') ?? [];
+          final selectedDistricts =
+              state.uri.queryParameters['selectedDistricts']?.split(',') ?? [];
+          return LocationFilterPage(
+            initialSelectedRegions:
+                selectedRegions.isEmpty ? null : selectedRegions,
+            initialSelectedDistricts:
+                selectedDistricts.isEmpty ? null : selectedDistricts,
+          );
+        },
       ),
       ShellRoute(
         builder: (context, state, child) {

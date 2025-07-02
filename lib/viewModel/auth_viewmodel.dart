@@ -1,4 +1,7 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/material.dart';
+import 'package:motunge/model/auth/apple_oauth_request.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:motunge/dataSource/auth.dart';
 import 'package:motunge/model/auth/enum/auth_state.dart';
@@ -29,6 +32,36 @@ class AuthViewModel {
     );
 
     final loginResponse = await _authDataSource.googleLogin(request);
+
+    await AppRouter.authNotifier.login(loginResponse);
+
+    final isUserRegisterResponse = await _authDataSource.checkRegister();
+
+    if (isUserRegisterResponse.isUserRegistered) {
+      AppRouter.authNotifier.setStatus(AuthStatus.authenticated);
+    } else {
+      AppRouter.authNotifier.setStatus(AuthStatus.needRegister);
+    }
+
+    return isUserRegisterResponse.isUserRegistered;
+  }
+
+  Future<bool?> appleLogin() async {
+    final result = await SignInWithApple.getAppleIDCredential(
+      scopes: [
+        AppleIDAuthorizationScopes.email,
+        AppleIDAuthorizationScopes.fullName,
+      ],
+    );
+
+    await FirebaseMessaging.instance.requestPermission();
+    String? fcmToken = await FirebaseMessaging.instance.getToken();
+
+    debugPrint('result: ${result.identityToken}');
+
+    final loginResponse = await _authDataSource.appleLogin(
+        AppleOAuthLoginRequest(
+            identityToken: result.identityToken!, deviceToken: fcmToken));
 
     await AppRouter.authNotifier.login(loginResponse);
 

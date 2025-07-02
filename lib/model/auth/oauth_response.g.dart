@@ -1,20 +1,18 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'google_oauth_response.dart';
+part of 'oauth_response.dart';
 
 // **************************************************************************
 // JsonSerializableGenerator
 // **************************************************************************
 
-GoogleOAuthLoginResponse _$GoogleOAuthLoginResponseFromJson(
-        Map<String, dynamic> json) =>
-    GoogleOAuthLoginResponse(
+OAuthLoginResponse _$OAuthLoginResponseFromJson(Map<String, dynamic> json) =>
+    OAuthLoginResponse(
       accessToken: json['access_token'] as String,
       refreshToken: json['refresh_token'] as String,
     );
 
-Map<String, dynamic> _$GoogleOAuthLoginResponseToJson(
-        GoogleOAuthLoginResponse instance) =>
+Map<String, dynamic> _$OAuthLoginResponseToJson(OAuthLoginResponse instance) =>
     <String, dynamic>{
       'access_token': instance.accessToken,
       'refresh_token': instance.refreshToken,
