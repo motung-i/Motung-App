@@ -10,7 +10,6 @@ import 'package:motunge/view/component/report_dialog.dart';
 import 'package:motunge/view/designSystem/colors.dart';
 import 'package:motunge/view/designSystem/fonts.dart';
 import 'package:motunge/utils/error_handler.dart';
-import 'package:motunge/constants/app_constants.dart';
 
 class ReviewList extends StatefulWidget {
   const ReviewList({super.key});

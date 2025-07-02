@@ -30,9 +30,9 @@ class _LocationFilterPageState extends State<LocationFilterPage> {
   String _selectedTab = '';
   bool _isLoading = true;
 
-  Set<String> _selectedRegions = <String>{};
-  Map<String, String> _selectedDistricts = <String, String>{};
-  Set<String> _selectedSpecialRegions = <String>{};
+  final Set<String> _selectedRegions = <String>{};
+  final Map<String, String> _selectedDistricts = <String, String>{};
+  final Set<String> _selectedSpecialRegions = <String>{};
 
   final Map<String, Future<DistrictsResponse>> _districtsCache = {};
 
@@ -426,7 +426,7 @@ class _LocationFilterPageState extends State<LocationFilterPage> {
                   if (!isLast) SizedBox(height: 20.h),
                 ],
               );
-            }).toList(),
+            }),
             if (region != '기타') ...[
               SizedBox(height: 20.h),
               _buildEntireRegionChip(region),

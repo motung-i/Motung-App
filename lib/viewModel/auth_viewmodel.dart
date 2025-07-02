@@ -10,7 +10,6 @@ import 'package:motunge/model/auth/oauth_response.dart';
 import 'package:motunge/model/auth/profile_response.dart';
 import 'package:motunge/model/auth/register_request.dart';
 import 'package:motunge/routes/app_router.dart';
-import 'package:motunge/constants/app_constants.dart';
 
 class AuthViewModel {
   final AuthDataSource _authDataSource = AuthDataSource();

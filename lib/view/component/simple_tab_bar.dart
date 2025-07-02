@@ -33,7 +33,7 @@ class SimpleTabBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       height: height ?? 48.h,
       child: isScrollable
           ? SingleChildScrollView(
