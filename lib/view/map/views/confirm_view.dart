@@ -26,7 +26,7 @@ class ConfirmView extends StatelessWidget {
         SizedBox(height: 4.h),
         Text("같이 세기의 여행을 떠나볼까요?",
             style: GlobalFontDesignSystem.m3Regular
-                .copyWith(color: DiaryMainGrey.grey800)),
+                .copyWith(color: AppColors.grey800)),
         SizedBox(height: 20.h),
         ButtonComponent(
           isEnable: true,
@@ -42,7 +42,7 @@ class ConfirmView extends StatelessWidget {
               child: Text(
                 "다시 뽑기",
                 style: GlobalFontDesignSystem.m3Regular.copyWith(
-                  color: DiaryMainGrey.grey600,
+                  color: AppColors.grey600,
                 ),
               ),
             ),

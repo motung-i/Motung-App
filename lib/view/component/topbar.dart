@@ -48,8 +48,8 @@ class Topbar extends StatelessWidget {
                   selectAbleText!,
                   style: GlobalFontDesignSystem.m3Regular.copyWith(
                     color: isSelectable
-                        ? DiaryColor.globalMainColor
-                        : DiaryMainGrey.grey600,
+                        ? AppColors.globalMainColor
+                        : AppColors.grey600,
                   ),
                 )
               : SizedBox(width: 24.w),

@@ -6,56 +6,105 @@ import 'package:motunge/model/auth/is_user_register_response.dart';
 import 'package:motunge/model/auth/profile_response.dart';
 import 'package:motunge/model/auth/register_request.dart';
 import 'package:motunge/model/auth/token_refresh_request.dart';
+import 'package:motunge/constants/app_constants.dart';
+import 'package:motunge/utils/error_handler.dart';
 
 class AuthDataSource extends BaseDataSource {
   Future<OAuthLoginResponse> googleLogin(
       GoogleOAuthLoginRequest request) async {
-    final response = await dio.post(getUrl('/auth/google/login/callback'),
-        data: request.toJson());
-    return OAuthLoginResponse.fromJson(response.data);
+    try {
+      final response = await dio.post(
+        getUrl(AppConstants.authGoogleLoginEndpoint),
+        data: request.toJson(),
+      );
+      return OAuthLoginResponse.fromJson(response.data);
+    } catch (e) {
+      throw AppError.fromException(e);
+    }
   }
 
   Future<OAuthLoginResponse> appleLogin(AppleOAuthLoginRequest request) async {
-    final response = await dio.post(getUrl('/auth/apple/login/callback'),
-        data: request.toJson());
-    return OAuthLoginResponse.fromJson(response.data);
+    try {
+      final response = await dio.post(
+        getUrl(AppConstants.authAppleLoginEndpoint),
+        data: request.toJson(),
+      );
+      return OAuthLoginResponse.fromJson(response.data);
+    } catch (e) {
+      throw AppError.fromException(e);
+    }
   }
 
   Future<IsUserRegisterResponse> checkRegister() async {
-    final response = await dio.get(getUrl('/auth/check-register'));
-    return IsUserRegisterResponse.fromJson(response.data);
+    try {
+      final response =
+          await dio.get(getUrl(AppConstants.authCheckRegisterEndpoint));
+      return IsUserRegisterResponse.fromJson(response.data);
+    } catch (e) {
+      throw AppError.fromException(e);
+    }
   }
 
   Future<void> register(RegisterRequest request) async {
-    await dio.post(getUrl('/auth/register'), data: request);
+    try {
+      await dio.post(getUrl(AppConstants.authRegisterEndpoint), data: request);
+    } catch (e) {
+      throw AppError.fromException(e);
+    }
   }
 
   Future<OAuthLoginResponse> refreshToken(TokenRefreshRequest request) async {
-    final response =
-        await dio.post(getUrl('/auth/refresh'), data: request.toJson());
-    return OAuthLoginResponse.fromJson(response.data);
+    try {
+      final response = await dio.post(
+        getUrl(AppConstants.authRefreshEndpoint),
+        data: request.toJson(),
+      );
+      return OAuthLoginResponse.fromJson(response.data);
+    } catch (e) {
+      throw AppError.fromException(e);
+    }
   }
 
   Future<void> logout() async {
-    await dio.post(getUrl('/auth/logout'));
+    try {
+      await dio.post(getUrl(AppConstants.authLogoutEndpoint));
+    } catch (e) {
+      throw AppError.fromException(e);
+    }
   }
 
   Future<void> deleteAccount() async {
-    await dio.delete(getUrl('/auth/delete-account'));
+    try {
+      await dio.delete(getUrl(AppConstants.authDeleteAccountEndpoint));
+    } catch (e) {
+      throw AppError.fromException(e);
+    }
   }
 
   Future<ProfileResponse> getProfile() async {
-    final response = await dio.get(getUrl('/user'));
-    return ProfileResponse.fromJson(response.data);
+    try {
+      final response = await dio.get(getUrl(AppConstants.userEndpoint));
+      return ProfileResponse.fromJson(response.data);
+    } catch (e) {
+      throw AppError.fromException(e);
+    }
   }
 
   Future<void> changeNickname(String nickname) async {
-    await dio.patch(getUrl('/user/nickname'), data: {
-      'nickname': nickname,
-    });
+    try {
+      await dio.patch(getUrl(AppConstants.userNicknameEndpoint), data: {
+        'nickname': nickname,
+      });
+    } catch (e) {
+      throw AppError.fromException(e);
+    }
   }
 
   Future<void> deleteUser() async {
-    await dio.delete(getUrl('/user'));
+    try {
+      await dio.delete(getUrl(AppConstants.userEndpoint));
+    } catch (e) {
+      throw AppError.fromException(e);
+    }
   }
 }

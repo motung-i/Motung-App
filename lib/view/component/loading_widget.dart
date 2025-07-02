@@ -25,7 +25,7 @@ class LoadingWidget extends StatelessWidget {
             height: size,
             child: CircularProgressIndicator(
               valueColor:
-                  AlwaysStoppedAnimation<Color>(DiaryColor.globalMainColor),
+                  AlwaysStoppedAnimation<Color>(AppColors.globalMainColor),
             ),
           ),
           if (message != null) ...[
@@ -33,7 +33,7 @@ class LoadingWidget extends StatelessWidget {
             Text(
               message ?? AppConstants.loadingText,
               style: GlobalFontDesignSystem.m3Regular.copyWith(
-                color: DiaryMainGrey.grey600,
+                color: AppColors.grey600,
               ),
             ),
           ],

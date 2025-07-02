@@ -16,13 +16,13 @@ class LocationBadge extends StatelessWidget {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
       decoration: BoxDecoration(
-        color: DiaryMainGrey.grey100,
+        color: AppColors.grey100,
         borderRadius: BorderRadius.circular(8.r),
       ),
       child: Text(
         location,
         style: GlobalFontDesignSystem.m3Semi.copyWith(
-          color: DiaryMainGrey.grey1000,
+          color: AppColors.grey1000,
         ),
       ),
     );

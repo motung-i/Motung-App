@@ -114,11 +114,13 @@ Widget _buildSystemConfig(BuildContext context) {
               width: 24.w,
               height: 24.h,
             ),
-            SizedBox(width: 12.w,),
+            SizedBox(
+              width: 12.w,
+            ),
             Text(
               "로그아웃",
               style: GlobalFontDesignSystem.m3Regular
-                  .copyWith(color: DiaryColor.systemErrorColor),
+                  .copyWith(color: AppColors.systemErrorColor),
             ),
           ],
         ),
@@ -135,11 +137,13 @@ Widget _buildSystemConfig(BuildContext context) {
               width: 24.w,
               height: 24.h,
             ),
-            SizedBox(width: 12.w,),
+            SizedBox(
+              width: 12.w,
+            ),
             Text(
               "회원탈퇴",
               style: GlobalFontDesignSystem.m3Regular
-                  .copyWith(color: DiaryColor.systemErrorColor),
+                  .copyWith(color: AppColors.systemErrorColor),
             ),
           ],
         ),

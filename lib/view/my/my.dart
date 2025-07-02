@@ -58,7 +58,7 @@ class _MyPageState extends State<MyPage> {
                       height: 24.h,
                     ),
                     Divider(
-                      color: DiaryMainGrey.grey100,
+                      color: AppColors.grey100,
                       height: 1.h,
                     ),
                     SizedBox(

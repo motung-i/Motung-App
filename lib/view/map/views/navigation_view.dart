@@ -34,7 +34,7 @@ class NavigationView extends StatelessWidget {
         SizedBox(height: 4.h),
         Text("$distance • $duration 소요 예정",
             style: GlobalFontDesignSystem.m3Regular
-                .copyWith(color: DiaryMainGrey.grey800)),
+                .copyWith(color: AppColors.grey800)),
         SizedBox(height: 28.h),
         ButtonComponent(
           isEnable: true,
@@ -63,19 +63,19 @@ class NavigationView extends StatelessWidget {
                 Text(
                   targetInfo!.restaurantComment,
                   style: GlobalFontDesignSystem.m3Regular
-                      .copyWith(color: DiaryMainGrey.grey800),
+                      .copyWith(color: AppColors.grey800),
                 ),
                 SizedBox(height: 8.h),
                 Text(
                   targetInfo!.sightseeingSpotsComment,
                   style: GlobalFontDesignSystem.m3Regular
-                      .copyWith(color: DiaryMainGrey.grey800),
+                      .copyWith(color: AppColors.grey800),
                 ),
                 SizedBox(height: 8.h),
                 Text(
                   targetInfo!.cultureComment,
                   style: GlobalFontDesignSystem.m3Regular
-                      .copyWith(color: DiaryMainGrey.grey800),
+                      .copyWith(color: AppColors.grey800),
                 ),
               ],
             ),

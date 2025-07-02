@@ -133,7 +133,7 @@ class _ReviewImageAttachmentPageState extends State<ReviewImageAttachmentPage> {
                     Text(
                       "이미지 추가",
                       style: GlobalFontDesignSystem.labelRegular
-                          .copyWith(color: DiaryMainGrey.grey600),
+                          .copyWith(color: AppColors.grey600),
                     ),
                     SizedBox(height: 8.h),
                     _buildImageSection(),
@@ -213,7 +213,7 @@ class _ReviewImageAttachmentPageState extends State<ReviewImageAttachmentPage> {
         Text(
           "이미지는 최대 3개까지 업로드 할 수 있어요",
           style: GlobalFontDesignSystem.labelRegular
-              .copyWith(color: DiaryMainGrey.grey600),
+              .copyWith(color: AppColors.grey600),
         ),
       ],
     );

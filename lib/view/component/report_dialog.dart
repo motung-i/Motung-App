@@ -96,7 +96,7 @@ class _ReportDialogState extends State<ReportDialog> {
                 Text(
                   "신고사유",
                   style: GlobalFontDesignSystem.m2Semi.copyWith(
-                    color: DiaryColor.black,
+                    color: AppColors.black,
                   ),
                 ),
                 GestureDetector(
@@ -104,7 +104,7 @@ class _ReportDialogState extends State<ReportDialog> {
                   child: Icon(
                     Icons.close,
                     size: 24.sp,
-                    color: DiaryColor.black,
+                    color: AppColors.black,
                   ),
                 ),
               ],
@@ -133,7 +133,7 @@ class _ReportDialogState extends State<ReportDialog> {
               width: double.infinity,
               child: ButtonComponent(
                 isEnable: _selectedReasons.isNotEmpty,
-                enableColor: DiaryColor.systemErrorColor,
+                enableColor: AppColors.systemErrorColor,
                 text: "신고하기",
                 onPressed: _selectedReasons.isNotEmpty
                     ? () {

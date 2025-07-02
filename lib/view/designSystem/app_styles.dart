@@ -20,7 +20,7 @@ class AppStyles {
       );
 
   static BoxDecoration get inputDecoration => BoxDecoration(
-        color: DiaryMainGrey.grey100,
+        color: AppColors.grey100,
         borderRadius: defaultBorderRadius,
       );
 

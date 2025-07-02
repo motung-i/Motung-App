@@ -70,7 +70,7 @@ class _ChangeNicknameState extends State<ChangeNickname> {
                         onPressed: () async {
                           await AuthViewModel().changeNickname(_nickname);
                           if (!context.mounted) return;
-                          context.go('/my');
+                          context.go('/home');
                         }),
                   ],
                 )),

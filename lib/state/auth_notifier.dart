@@ -4,9 +4,11 @@ import 'package:motunge/dataSource/auth.dart';
 import 'package:motunge/model/auth/enum/auth_state.dart';
 import 'package:motunge/model/auth/oauth_response.dart';
 import 'package:motunge/model/auth/token_refresh_request.dart';
+import 'package:motunge/constants/app_constants.dart';
 
 class AuthNotifier extends ChangeNotifier {
-  AuthStatus _status = AuthStatus.unauthenticated;
+  static const FlutterSecureStorage _storage = FlutterSecureStorage();
+  AuthStatus _status = AuthStatus.loading;
   AuthStatus get status => _status;
 
   AuthNotifier() {
@@ -14,8 +16,7 @@ class AuthNotifier extends ChangeNotifier {
   }
 
   Future<void> checkLoginStatus() async {
-    final storage = FlutterSecureStorage();
-    final refreshToken = await storage.read(key: 'refreshToken');
+    final refreshToken = await _storage.read(key: AppConstants.refreshTokenKey);
 
     if (refreshToken == null) {
       _status = AuthStatus.unauthenticated;
@@ -26,8 +27,10 @@ class AuthNotifier extends ChangeNotifier {
     try {
       final response = await AuthDataSource()
           .refreshToken(TokenRefreshRequest(refreshToken: refreshToken));
-      await storage.write(key: 'accessToken', value: response.accessToken);
-      await storage.write(key: 'refreshToken', value: response.refreshToken);
+      await _storage.write(
+          key: AppConstants.accessTokenKey, value: response.accessToken);
+      await _storage.write(
+          key: AppConstants.refreshTokenKey, value: response.refreshToken);
 
       final registerCheck = await AuthDataSource().checkRegister();
       _status = registerCheck.isUserRegistered
@@ -41,9 +44,10 @@ class AuthNotifier extends ChangeNotifier {
   }
 
   Future<void> login(OAuthLoginResponse response) async {
-    final storage = FlutterSecureStorage();
-    await storage.write(key: 'refreshToken', value: response.refreshToken);
-    await storage.write(key: 'accessToken', value: response.accessToken);
+    await _storage.write(
+        key: AppConstants.refreshTokenKey, value: response.refreshToken);
+    await _storage.write(
+        key: AppConstants.accessTokenKey, value: response.accessToken);
     notifyListeners();
   }
 
@@ -53,9 +57,8 @@ class AuthNotifier extends ChangeNotifier {
   }
 
   Future<void> logout() async {
-    final storage = FlutterSecureStorage();
-    await storage.delete(key: 'refreshToken');
-    await storage.delete(key: 'accessToken');
+    await _storage.delete(key: AppConstants.refreshTokenKey);
+    await _storage.delete(key: AppConstants.accessTokenKey);
     _status = AuthStatus.unauthenticated;
     notifyListeners();
   }

@@ -4,10 +4,13 @@ import 'package:flutter_svg/svg.dart';
 import 'package:motunge/dataSource/map.dart';
 import 'package:motunge/dataSource/review.dart';
 import 'package:motunge/model/review/reviews_response.dart';
+import 'package:motunge/view/component/app_tab_bar.dart';
 import 'package:motunge/view/component/recommend_badge.dart';
 import 'package:motunge/view/component/report_dialog.dart';
 import 'package:motunge/view/designSystem/colors.dart';
 import 'package:motunge/view/designSystem/fonts.dart';
+import 'package:motunge/utils/error_handler.dart';
+import 'package:motunge/constants/app_constants.dart';
 
 class ReviewList extends StatefulWidget {
   const ReviewList({super.key});
@@ -17,9 +20,11 @@ class ReviewList extends StatefulWidget {
 }
 
 class _ReviewListState extends State<ReviewList> {
+  // ============ Data Sources ============
   final MapDataSource _mapDataSource = MapDataSource();
   final ReviewDataSource _reviewDataSource = ReviewDataSource();
 
+  // ============ State Variables ============
   bool _showPhotoReviewsOnly = false;
   List<String> _regions = [];
   String _searchQuery = '';
@@ -29,23 +34,35 @@ class _ReviewListState extends State<ReviewList> {
   final Map<String, bool> _isLoadingByRegion = {};
   final Map<String, bool> _isInitializedByRegion = {};
 
+  // ============ Lifecycle Methods ============
   @override
   void initState() {
     super.initState();
     _initializeRegions();
   }
 
+  // ============ Data Management Methods ============
   Future<void> _initializeRegions() async {
-    final regionsData = await _mapDataSource.getRegions();
-    _regions = regionsData.regions;
+    try {
+      final regionsData = await _mapDataSource.getRegions();
+      setState(() {
+        _regions = regionsData.regions;
+      });
 
-    for (var region in _regions) {
-      _isInitializedByRegion[region] = false;
-      _isLoadingByRegion[region] = false;
-    }
+      for (var region in _regions) {
+        _isInitializedByRegion[region] = false;
+        _isLoadingByRegion[region] = false;
+      }
 
-    if (_regions.isNotEmpty) {
-      _fetchReviewsForRegion(_regions[0]);
+      if (_regions.isNotEmpty) {
+        await _fetchReviewsForRegion(_regions[0]);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ErrorHandler.showAppErrorSnackBar(
+        context,
+        AppError.fromException(e),
+      );
     }
   }
 
@@ -73,8 +90,9 @@ class _ReviewListState extends State<ReviewList> {
     } catch (e) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('리뷰를 불러오는데 실패했습니다: $e')),
+      ErrorHandler.showAppErrorSnackBar(
+        context,
+        AppError.fromException(e),
       );
 
       setState(() {
@@ -84,6 +102,8 @@ class _ReviewListState extends State<ReviewList> {
   }
 
   Future<void> _refreshCurrentRegion() async {
+    if (_regions.isEmpty) return;
+
     final currentRegion = _regions[_currentTabIndex];
     setState(() {
       _isInitializedByRegion[currentRegion] = false;
@@ -91,12 +111,14 @@ class _ReviewListState extends State<ReviewList> {
     await _fetchReviewsForRegion(currentRegion);
   }
 
+  // ============ Event Handlers ============
   void _onSearchChanged(String value) {
     setState(() {
       _searchQuery = value;
       if (_regions.isNotEmpty) {
-        _isInitializedByRegion[_regions[_currentTabIndex]] = false;
-        _fetchReviewsForRegion(_regions[_currentTabIndex]);
+        final currentRegion = _regions[_currentTabIndex];
+        _isInitializedByRegion[currentRegion] = false;
+        _fetchReviewsForRegion(currentRegion);
       }
     });
   }
@@ -104,21 +126,50 @@ class _ReviewListState extends State<ReviewList> {
   void _onPhotoFilterToggle() {
     setState(() {
       _showPhotoReviewsOnly = !_showPhotoReviewsOnly;
-      _isInitializedByRegion[_regions[_currentTabIndex]] = false;
+      if (_regions.isNotEmpty) {
+        final currentRegion = _regions[_currentTabIndex];
+        _isInitializedByRegion[currentRegion] = false;
+      }
     });
-    _fetchReviewsForRegion(_regions[_currentTabIndex]);
-  }
 
-  void _onTabChanged(TabController tabController) {
-    if (tabController.indexIsChanging) {
-      setState(() {
-        _currentTabIndex = tabController.index;
-      });
+    if (_regions.isNotEmpty) {
       _fetchReviewsForRegion(_regions[_currentTabIndex]);
     }
   }
 
+  void _onTabChanged(int index) {
+    setState(() {
+      _currentTabIndex = index;
+    });
+    _fetchReviewsForRegion(_regions[index]);
+  }
+
+  Future<void> _handleReportReview(Review review) async {
+    ReportDialog.show(
+      context,
+      onConfirm: (reasons) async {
+        if (reasons.isEmpty) return;
+
+        try {
+          await _reviewDataSource.reportReview(review.reviewId, reasons);
+
+          if (!mounted) return;
+          ErrorHandler.showSuccessSnackBar(context, '신고가 접수되었습니다.');
+        } catch (e) {
+          if (!mounted) return;
+          ErrorHandler.showAppErrorSnackBar(
+            context,
+            AppError.fromException(e),
+          );
+        }
+      },
+    );
+  }
+
+  // ============ Helper Methods ============
   int _getCurrentTabReviewCount() {
+    if (_regions.isEmpty) return 0;
+
     final currentRegion = _regions[_currentTabIndex];
     final reviews = _reviewsByRegion[currentRegion] ?? [];
 
@@ -129,6 +180,14 @@ class _ReviewListState extends State<ReviewList> {
         : reviews.length;
   }
 
+  List<Review> _getFilteredReviews(String region) {
+    final reviews = _reviewsByRegion[region] ?? [];
+    return _showPhotoReviewsOnly
+        ? reviews.where((review) => review.imageUrls.isNotEmpty).toList()
+        : reviews;
+  }
+
+  // ============ UI Building Methods ============
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -158,10 +217,10 @@ class _ReviewListState extends State<ReviewList> {
           disabledBorder: InputBorder.none,
           hintText: "검색어를 입력하세요",
           hintStyle: GlobalFontDesignSystem.m3Regular.copyWith(
-            color: DiaryMainGrey.grey600,
+            color: AppColors.grey600,
           ),
           filled: true,
-          fillColor: DiaryMainGrey.grey100,
+          fillColor: AppColors.grey100,
           border: OutlineInputBorder(
             borderSide: BorderSide.none,
             borderRadius: BorderRadius.circular(8),
@@ -198,38 +257,26 @@ class _ReviewListState extends State<ReviewList> {
     return Expanded(
       child: DefaultTabController(
         length: _regions.length,
-        child: Builder(
-          builder: (context) {
-            final TabController tabController =
-                DefaultTabController.of(context);
-            tabController.addListener(() => _onTabChanged(tabController));
-
-            return Column(
-              children: [
-                _buildTabBar(),
-                _buildFilterSection(),
-                _buildTabBarView(),
-              ],
-            );
-          },
+        child: Column(
+          children: [
+            AppTabBar(
+              tabs: _regions,
+              onTap: _onTabChanged,
+              height: 40.h,
+            ),
+            _buildFilterSection(),
+            Expanded(
+              child: AppTabBarView(
+                children: _regions.map((region) {
+                  return _isLoadingByRegion[region] == true
+                      ? _buildLoadingIndicator()
+                      : _buildReviewListForRegion(region);
+                }).toList(),
+              ),
+            ),
+          ],
         ),
       ),
-    );
-  }
-
-  Widget _buildTabBar() {
-    return TabBar(
-      indicatorColor: DiaryColor.globalMainColor,
-      labelStyle: GlobalFontDesignSystem.m3Semi.copyWith(
-        color: DiaryColor.globalMainColor,
-      ),
-      indicatorWeight: 1.h,
-      dividerHeight: 0,
-      tabAlignment: TabAlignment.start,
-      isScrollable: true,
-      unselectedLabelColor: DiaryMainGrey.grey800,
-      indicatorSize: TabBarIndicatorSize.tab,
-      tabs: _regions.map((region) => Tab(text: region, height: 40)).toList(),
     );
   }
 
@@ -244,35 +291,15 @@ class _ReviewListState extends State<ReviewList> {
               Text(
                 "총 ${_getCurrentTabReviewCount()}개",
                 style: GlobalFontDesignSystem.labelRegular.copyWith(
-                  color: DiaryMainGrey.grey700,
+                  color: AppColors.grey700,
                 ),
               ),
-              GestureDetector(
-                onTap: _onPhotoFilterToggle,
-                child: Row(
-                  children: [
-                    Text(
-                      "사진리뷰",
-                      style: GlobalFontDesignSystem.m3Regular.copyWith(
-                        color: Colors.black,
-                      ),
-                    ),
-                    SizedBox(width: 4.w),
-                    SvgPicture.asset(
-                      _showPhotoReviewsOnly
-                          ? "assets/images/checked.svg"
-                          : "assets/images/unchecked.svg",
-                      width: 24.w,
-                      height: 24.h,
-                    ),
-                  ],
-                ),
-              ),
+              _buildPhotoFilterToggle(),
             ],
           ),
           SizedBox(height: 12.h),
           Divider(
-            color: DiaryMainGrey.grey100,
+            color: AppColors.grey100,
             height: 1.h,
             thickness: 1.h,
           ),
@@ -281,14 +308,26 @@ class _ReviewListState extends State<ReviewList> {
     );
   }
 
-  Widget _buildTabBarView() {
-    return Expanded(
-      child: TabBarView(
-        children: _regions.map((region) {
-          return _isLoadingByRegion[region] == true
-              ? _buildLoadingIndicator()
-              : _buildReviewListForRegion(region);
-        }).toList(),
+  Widget _buildPhotoFilterToggle() {
+    return GestureDetector(
+      onTap: _onPhotoFilterToggle,
+      child: Row(
+        children: [
+          Text(
+            "사진리뷰",
+            style: GlobalFontDesignSystem.m3Regular.copyWith(
+              color: Colors.black,
+            ),
+          ),
+          SizedBox(width: 4.w),
+          SvgPicture.asset(
+            _showPhotoReviewsOnly
+                ? "assets/images/checked.svg"
+                : "assets/images/unchecked.svg",
+            width: 24.w,
+            height: 24.h,
+          ),
+        ],
       ),
     );
   }
@@ -296,16 +335,13 @@ class _ReviewListState extends State<ReviewList> {
   Widget _buildLoadingIndicator() {
     return const Center(
       child: CircularProgressIndicator(
-        color: DiaryColor.globalMainColor,
+        color: AppColors.primary,
       ),
     );
   }
 
   Widget _buildReviewListForRegion(String region) {
-    final reviews = _reviewsByRegion[region] ?? [];
-    final filteredReviews = _showPhotoReviewsOnly
-        ? reviews.where((review) => review.imageUrls.isNotEmpty).toList()
-        : reviews;
+    final filteredReviews = _getFilteredReviews(region);
 
     return filteredReviews.isEmpty
         ? Center(
@@ -345,7 +381,7 @@ class _ReviewListState extends State<ReviewList> {
           ),
         ),
         Divider(
-          color: DiaryMainGrey.grey100,
+          color: AppColors.grey100,
           height: 1.h,
           thickness: 1.h,
         ),
@@ -363,7 +399,7 @@ class _ReviewListState extends State<ReviewList> {
         Text(
           " · ${review.nickname ?? "탈퇴한 유저"}",
           style: GlobalFontDesignSystem.labelRegular.copyWith(
-            color: DiaryMainGrey.grey700,
+            color: AppColors.grey700,
           ),
         ),
       ],
@@ -380,27 +416,33 @@ class _ReviewListState extends State<ReviewList> {
   }
 
   Widget _buildReviewImages(Review review) {
+    const int maxImages = 3;
+    final imagesToShow = review.imageUrls.take(maxImages).toList();
+
     return Column(
       children: [
         SizedBox(height: 12.h),
         SizedBox(
           height: 120.h,
           child: Row(
-            children: [
-              for (int i = 0; i < review.imageUrls.length && i < 3; i++)
-                Expanded(
-                  child: Container(
-                    margin: EdgeInsets.only(right: i < 2 ? 8.w : 0),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(8.r),
-                      image: DecorationImage(
-                        image: NetworkImage(review.imageUrls[i]),
-                        fit: BoxFit.cover,
-                      ),
+            children: imagesToShow.asMap().entries.map((entry) {
+              final index = entry.key;
+              final imageUrl = entry.value;
+              final isLast = index == imagesToShow.length - 1;
+
+              return Expanded(
+                child: Container(
+                  margin: EdgeInsets.only(right: isLast ? 0 : 8.w),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8.r),
+                    image: DecorationImage(
+                      image: NetworkImage(imageUrl),
+                      fit: BoxFit.cover,
                     ),
                   ),
                 ),
-            ],
+              );
+            }).toList(),
           ),
         ),
       ],
@@ -413,41 +455,16 @@ class _ReviewListState extends State<ReviewList> {
         Text(
           review.createdDate,
           style: GlobalFontDesignSystem.labelRegular.copyWith(
-            color: DiaryMainGrey.grey600,
+            color: AppColors.grey600,
           ),
         ),
-        SizedBox(width: 8.w),
         const Spacer(),
         GestureDetector(
-          onTap: () {
-            ReportDialog.show(
-              context,
-              onConfirm: (reasons) async {
-                if (reasons.isEmpty) return;
-
-                try {
-                  await _reviewDataSource.reportReview(
-                    review.reviewId,
-                    reasons,
-                  );
-
-                  if (!mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('신고가 접수되었습니다.')),
-                  );
-                } catch (e) {
-                  if (!mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('신고에 실패했습니다: $e')),
-                  );
-                }
-              },
-            );
-          },
+          onTap: () => _handleReportReview(review),
           child: Text(
             "신고",
             style: GlobalFontDesignSystem.labelRegular.copyWith(
-              color: DiaryMainGrey.grey300,
+              color: AppColors.grey300,
             ),
           ),
         ),

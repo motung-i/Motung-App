@@ -127,7 +127,7 @@ class _RouteSelectionViewState extends State<RouteSelectionView> {
     final optimalPolyline = NPolylineOverlay(
       id: 'optimal_route',
       coords: optimalPath,
-      color: DiaryColor.globalMainColor,
+      color: AppColors.globalMainColor,
       width: 5,
     );
 
@@ -142,7 +142,7 @@ class _RouteSelectionViewState extends State<RouteSelectionView> {
     final tollFreePolyline = NPolylineOverlay(
       id: 'toll_free_route',
       coords: tollFreePath,
-      color: DiaryMainGrey.grey600,
+      color: AppColors.grey600,
       width: 3,
     );
 
@@ -267,7 +267,7 @@ class _RouteSelectionViewState extends State<RouteSelectionView> {
                             width: 91.w,
                             height: 3.h,
                             decoration: BoxDecoration(
-                              color: DiaryMainGrey.grey200,
+                              color: AppColors.grey200,
                               borderRadius: BorderRadius.circular(1.5),
                             ),
                           ),
@@ -292,8 +292,7 @@ class _RouteSelectionViewState extends State<RouteSelectionView> {
                                 directionsResponse.traoptimal),
                           ),
                           SizedBox(height: 20.h),
-                          const Divider(
-                              color: DiaryMainGrey.grey100, height: 1),
+                          const Divider(color: AppColors.grey100, height: 1),
                           SizedBox(height: 20.h),
                           _RouteCard(
                             routeType: '무료 우선',
@@ -314,7 +313,7 @@ class _RouteSelectionViewState extends State<RouteSelectionView> {
                               '경로 정보를 불러올 수 없습니다.',
                               style:
                                   GlobalFontDesignSystem.labelRegular.copyWith(
-                                color: DiaryMainGrey.grey500,
+                                color: AppColors.grey500,
                               ),
                             ),
                           ),
@@ -363,7 +362,7 @@ class _RouteCard extends StatelessWidget {
               Text(
                 routeType,
                 style: GlobalFontDesignSystem.labelRegular.copyWith(
-                  color: DiaryColor.black,
+                  color: AppColors.black,
                 ),
               ),
               SizedBox(height: 4.h),
@@ -372,7 +371,7 @@ class _RouteCard extends StatelessWidget {
                   Text(
                     duration,
                     style: GlobalFontDesignSystem.m2Semi.copyWith(
-                      color: DiaryColor.black,
+                      color: AppColors.black,
                     ),
                   ),
                   SizedBox(width: 7.w),
@@ -380,7 +379,7 @@ class _RouteCard extends StatelessWidget {
                     width: 2,
                     height: 2,
                     decoration: const BoxDecoration(
-                      color: DiaryMainGrey.grey800,
+                      color: AppColors.grey800,
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -388,7 +387,7 @@ class _RouteCard extends StatelessWidget {
                   Text(
                     distance,
                     style: GlobalFontDesignSystem.m3Regular.copyWith(
-                      color: DiaryMainGrey.grey800,
+                      color: AppColors.grey800,
                     ),
                   ),
                 ],
@@ -399,14 +398,14 @@ class _RouteCard extends StatelessWidget {
                   Text(
                     '통행료 $toll',
                     style: GlobalFontDesignSystem.labelRegular.copyWith(
-                      color: DiaryColor.black,
+                      color: AppColors.black,
                     ),
                   ),
                   SizedBox(width: 12.w),
                   Text(
                     '택시비 $taxiFare',
                     style: GlobalFontDesignSystem.labelRegular.copyWith(
-                      color: DiaryColor.black,
+                      color: AppColors.black,
                     ),
                   ),
                 ],
@@ -418,7 +417,7 @@ class _RouteCard extends StatelessWidget {
         ElevatedButton(
           onPressed: onStartNavigation,
           style: ElevatedButton.styleFrom(
-            backgroundColor: DiaryColor.globalMainColor,
+            backgroundColor: AppColors.globalMainColor,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
             ),

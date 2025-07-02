@@ -72,7 +72,7 @@ class _OnboardingState extends State<Onboarding> {
                 children: [
                   Text("닉네임",
                       style: GlobalFontDesignSystem.labelRegular
-                          .copyWith(color: DiaryMainGrey.grey600)),
+                          .copyWith(color: AppColors.grey600)),
                   SizedBox(height: 4),
                   InputComponent(
                       hintText: "닉네임을 입력해 주세요",

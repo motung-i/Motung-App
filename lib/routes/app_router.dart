@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:motunge/state/auth_notifier.dart';
 import 'package:motunge/view/common/scaffold_with_nav_bar.dart';
+import 'package:motunge/view/common/splash_page.dart';
 import 'package:motunge/view/home/home.dart';
 import 'package:motunge/view/login/login.dart';
 import 'package:motunge/view/map/views/route_selection_view.dart';
@@ -30,21 +31,29 @@ class AppRouter {
     navigatorKey: rootNavigatorKey,
     redirect: (context, state) {
       final status = authNotifier.status;
+      final isSplash = state.fullPath == '/splash';
       final isLoggingIn = state.fullPath == '/login';
       final isOnboarding = state.fullPath == '/onboarding';
 
       switch (status) {
+        case AuthStatus.loading:
+          return isSplash ? null : '/splash';
         case AuthStatus.unauthenticated:
           return isLoggingIn ? null : '/login';
         case AuthStatus.needRegister:
           return isOnboarding ? null : '/onboarding';
         case AuthStatus.authenticated:
-          if (isLoggingIn || isOnboarding) return '/home';
+          if (isLoggingIn || isOnboarding || isSplash) return '/home';
           return null;
       }
     },
-    initialLocation: '/login',
+    initialLocation: '/splash',
     routes: [
+      GoRoute(
+        path: '/splash',
+        name: 'splash',
+        builder: (context, state) => const SplashPage(),
+      ),
       GoRoute(
         path: '/login',
         name: 'login',

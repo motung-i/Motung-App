@@ -69,7 +69,7 @@ class _MyReviewsPageState extends State<MyReviewsPage> {
               child: _isLoading
                   ? const Center(
                       child: CircularProgressIndicator(
-                      color: DiaryColor.globalMainColor,
+                      color: AppColors.globalMainColor,
                     ))
                   : _myReviews.isEmpty
                       ? Center(
@@ -113,7 +113,7 @@ class _MyReviewsPageState extends State<MyReviewsPage> {
           ),
         ),
         Divider(
-          color: DiaryMainGrey.grey100,
+          color: AppColors.grey100,
           height: 1.h,
           thickness: 1.h,
         ),
@@ -131,7 +131,7 @@ class _MyReviewsPageState extends State<MyReviewsPage> {
         Text(
           " · ${review.nickname ?? "익명"}",
           style: GlobalFontDesignSystem.labelRegular.copyWith(
-            color: DiaryMainGrey.grey700,
+            color: AppColors.grey700,
           ),
         ),
       ],
@@ -181,7 +181,7 @@ class _MyReviewsPageState extends State<MyReviewsPage> {
         Text(
           review.createdDate,
           style: GlobalFontDesignSystem.labelRegular.copyWith(
-            color: DiaryMainGrey.grey600,
+            color: AppColors.grey600,
           ),
         ),
       ],

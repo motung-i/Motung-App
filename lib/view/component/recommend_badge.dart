@@ -17,13 +17,13 @@ class RecommendBadge extends StatelessWidget {
       margin: EdgeInsets.only(bottom: 12.h),
       padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
       decoration: BoxDecoration(
-        color: DiaryMainGrey.grey100,
+        color: AppColors.grey100,
         borderRadius: BorderRadius.circular(8.r),
       ),
       child: Text(
         isRecommend ? "이 장소를 추천해요 👍" : "이 장소를 추천하지 않아요 👎",
         style: GlobalFontDesignSystem.m3Semi.copyWith(
-          color: DiaryMainGrey.grey1000,
+          color: AppColors.grey1000,
         ),
       ),
     );

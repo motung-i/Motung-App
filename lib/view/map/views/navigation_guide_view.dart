@@ -106,7 +106,7 @@ class _NavigationGuideViewState extends State<NavigationGuideView> {
     final routePolyline = NPolylineOverlay(
       id: 'selected_route',
       coords: routePath,
-      color: DiaryColor.globalMainColor,
+      color: AppColors.globalMainColor,
       width: 5,
     );
 
@@ -260,7 +260,7 @@ class _NavigationGuideViewState extends State<NavigationGuideView> {
                             width: 91.w,
                             height: 3.h,
                             decoration: BoxDecoration(
-                              color: DiaryMainGrey.grey200,
+                              color: AppColors.grey200,
                               borderRadius: BorderRadius.circular(1.5),
                             ),
                           ),
@@ -273,8 +273,7 @@ class _NavigationGuideViewState extends State<NavigationGuideView> {
                         else if (selectedDirection != null) ...[
                           _buildRouteHeader(),
                           SizedBox(height: 20.h),
-                          const Divider(
-                              color: DiaryMainGrey.grey100, height: 1),
+                          const Divider(color: AppColors.grey100, height: 1),
                           SizedBox(height: 20.h),
                           _buildRouteGuideList(),
                         ] else
@@ -283,7 +282,7 @@ class _NavigationGuideViewState extends State<NavigationGuideView> {
                               '경로 정보를 불러올 수 없습니다.',
                               style:
                                   GlobalFontDesignSystem.labelRegular.copyWith(
-                                color: DiaryMainGrey.grey500,
+                                color: AppColors.grey500,
                               ),
                             ),
                           ),
@@ -314,7 +313,7 @@ class _NavigationGuideViewState extends State<NavigationGuideView> {
             Text(
               _getRouteTypeName(),
               style: GlobalFontDesignSystem.labelRegular.copyWith(
-                color: DiaryColor.black,
+                color: AppColors.black,
               ),
             ),
             GestureDetector(
@@ -322,7 +321,7 @@ class _NavigationGuideViewState extends State<NavigationGuideView> {
               child: Text(
                 '새로고침',
                 style: GlobalFontDesignSystem.labelRegular.copyWith(
-                  color: DiaryMainGrey.grey400,
+                  color: AppColors.grey400,
                 ),
               ),
             ),
@@ -334,7 +333,7 @@ class _NavigationGuideViewState extends State<NavigationGuideView> {
             Text(
               _formatDuration(selectedDirection.duration),
               style: GlobalFontDesignSystem.m2Semi.copyWith(
-                color: DiaryColor.black,
+                color: AppColors.black,
               ),
             ),
             SizedBox(width: 7.w),
@@ -342,7 +341,7 @@ class _NavigationGuideViewState extends State<NavigationGuideView> {
               width: 2,
               height: 2,
               decoration: const BoxDecoration(
-                color: DiaryMainGrey.grey800,
+                color: AppColors.grey800,
                 shape: BoxShape.circle,
               ),
             ),
@@ -350,7 +349,7 @@ class _NavigationGuideViewState extends State<NavigationGuideView> {
             Text(
               _formatDistance(selectedDirection.distance),
               style: GlobalFontDesignSystem.m3Regular.copyWith(
-                color: DiaryMainGrey.grey800,
+                color: AppColors.grey800,
               ),
             ),
           ],
@@ -361,14 +360,14 @@ class _NavigationGuideViewState extends State<NavigationGuideView> {
             Text(
               '통행료 ${_formatPrice(selectedDirection.tollFare)}',
               style: GlobalFontDesignSystem.labelRegular.copyWith(
-                color: DiaryColor.black,
+                color: AppColors.black,
               ),
             ),
             SizedBox(width: 12.w),
             Text(
               '택시비 ${_formatPrice(selectedDirection.taxiFare)}',
               style: GlobalFontDesignSystem.labelRegular.copyWith(
-                color: DiaryColor.black,
+                color: AppColors.black,
               ),
             ),
           ],
@@ -395,7 +394,7 @@ class _NavigationGuideViewState extends State<NavigationGuideView> {
             Container(
               margin: EdgeInsets.only(left: 16.w),
               child: const Divider(
-                color: DiaryMainGrey.grey100,
+                color: AppColors.grey100,
                 height: 1,
               ),
             ),
@@ -416,8 +415,7 @@ class _NavigationGuideViewState extends State<NavigationGuideView> {
             height: 8.h,
             margin: EdgeInsets.only(top: 6.h, right: 8.w),
             decoration: BoxDecoration(
-              color:
-                  isFirst ? DiaryColor.globalMainColor : DiaryMainGrey.grey300,
+              color: isFirst ? AppColors.globalMainColor : AppColors.grey300,
               shape: BoxShape.circle,
             ),
           ),
@@ -425,7 +423,7 @@ class _NavigationGuideViewState extends State<NavigationGuideView> {
             child: Text(
               guide,
               style: GlobalFontDesignSystem.m3Regular.copyWith(
-                color: DiaryColor.black,
+                color: AppColors.black,
               ),
             ),
           ),

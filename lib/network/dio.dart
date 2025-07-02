@@ -6,6 +6,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:motunge/model/auth/token_refresh_request.dart';
 import 'package:motunge/model/auth/oauth_response.dart';
 import 'package:motunge/routes/app_router.dart';
+import 'package:motunge/constants/app_constants.dart';
 
 abstract class AppDio {
   AppDio._internal();
@@ -16,6 +17,7 @@ abstract class AppDio {
 }
 
 class _AppDio with DioMixin implements Dio {
+  static const FlutterSecureStorage _storage = FlutterSecureStorage();
   static bool _isRefreshing = false;
   static final List<Completer<void>> _refreshQueue = [];
 
@@ -27,19 +29,20 @@ class _AppDio with DioMixin implements Dio {
       headers: {
         'Content-Type': 'application/json',
       },
-      connectTimeout: const Duration(seconds: 30),
-      receiveTimeout: const Duration(seconds: 30),
-      sendTimeout: const Duration(seconds: 30),
+      connectTimeout: AppConstants.connectTimeout,
+      receiveTimeout: AppConstants.receiveTimeout,
+      sendTimeout: AppConstants.sendTimeout,
       receiveDataWhenStatusError: true,
     );
 
     interceptors.addAll([
       InterceptorsWrapper(
         onRequest: (options, handler) async {
-          if (options.path == "${dotenv.env['API_URL']}/auth/refresh") {
+          if (options.path ==
+              "${dotenv.env['API_URL']}${AppConstants.authRefreshEndpoint}") {
             return handler.next(options);
           }
-          final token = await FlutterSecureStorage().read(key: 'accessToken');
+          final token = await _storage.read(key: AppConstants.accessTokenKey);
           if (token != null) {
             options.headers['Authorization'] = 'Bearer $token';
           }
@@ -48,7 +51,8 @@ class _AppDio with DioMixin implements Dio {
         onError: (error, handler) async {
           // 401 에러이고 토큰 갱신 요청이 아닌 경우
           if (error.response?.statusCode == 401 &&
-              !error.requestOptions.path.contains('/auth/refresh')) {
+              !error.requestOptions.path
+                  .contains(AppConstants.authRefreshEndpoint)) {
             // 이미 토큰 갱신 중이면 대기
             if (_isRefreshing) {
               final completer = Completer<void>();
@@ -64,7 +68,7 @@ class _AppDio with DioMixin implements Dio {
 
             try {
               final refreshToken =
-                  await FlutterSecureStorage().read(key: 'refreshToken');
+                  await _storage.read(key: AppConstants.refreshTokenKey);
 
               if (refreshToken == null) {
                 // Refresh token이 없으면 로그아웃
@@ -76,11 +80,12 @@ class _AppDio with DioMixin implements Dio {
               final refreshResponse = await _refreshToken(refreshToken);
 
               // 새 토큰 저장
-              final storage = FlutterSecureStorage();
-              await storage.write(
-                  key: 'accessToken', value: refreshResponse.accessToken);
-              await storage.write(
-                  key: 'refreshToken', value: refreshResponse.refreshToken);
+              await _storage.write(
+                  key: AppConstants.accessTokenKey,
+                  value: refreshResponse.accessToken);
+              await _storage.write(
+                  key: AppConstants.refreshTokenKey,
+                  value: refreshResponse.refreshToken);
 
               // 대기 중인 모든 요청 재시도
               for (final completer in _refreshQueue) {
@@ -119,7 +124,7 @@ class _AppDio with DioMixin implements Dio {
     dio.options.baseUrl = _baseUrl;
 
     final response = await dio.post(
-      '/auth/refresh',
+      AppConstants.authRefreshEndpoint,
       data: TokenRefreshRequest(refreshToken: refreshToken).toJson(),
     );
 
@@ -128,7 +133,7 @@ class _AppDio with DioMixin implements Dio {
 
   Future<Response<dynamic>> _retry(RequestOptions requestOptions) async {
     // 새로운 토큰으로 Authorization 헤더 업데이트
-    final token = await FlutterSecureStorage().read(key: 'accessToken');
+    final token = await _storage.read(key: AppConstants.accessTokenKey);
     if (token != null) {
       requestOptions.headers['Authorization'] = 'Bearer $token';
     }

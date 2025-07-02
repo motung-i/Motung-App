@@ -15,4 +15,29 @@ class AppConstants {
 
   // 기본값
   static const Duration defaultTimeout = Duration(seconds: 30);
+
+  // 네트워크 설정
+  static const Duration connectTimeout = Duration(seconds: 30);
+  static const Duration receiveTimeout = Duration(seconds: 30);
+  static const Duration sendTimeout = Duration(seconds: 30);
+
+  // API 엔드포인트
+  static const String authGoogleLoginEndpoint = '/auth/google/login/callback';
+  static const String authAppleLoginEndpoint = '/auth/apple/login/callback';
+  static const String authCheckRegisterEndpoint = '/auth/check-register';
+  static const String authRegisterEndpoint = '/auth/register';
+  static const String authRefreshEndpoint = '/auth/refresh';
+  static const String authLogoutEndpoint = '/auth/logout';
+  static const String authDeleteAccountEndpoint = '/auth/delete-account';
+  static const String userEndpoint = '/user';
+  static const String userNicknameEndpoint = '/user/nickname';
+
+  // 입력 필드 제한
+  static const int nicknameMaxLength = 12;
+  static const int reviewMaxLength = 400;
+  static const int reviewMaxLines = 8;
+
+  // 보안 저장소 키
+  static const String accessTokenKey = 'accessToken';
+  static const String refreshTokenKey = 'refreshToken';
 }

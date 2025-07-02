@@ -15,7 +15,7 @@ class EmptyDataWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: DiaryMainGrey.grey100,
+        color: AppColors.grey100,
         borderRadius: BorderRadius.circular(12),
       ),
       alignment: Alignment.center,
@@ -23,8 +23,8 @@ class EmptyDataWidget extends StatelessWidget {
       height: 141.h,
       child: Text(
         text,
-        style: GlobalFontDesignSystem.m3Regular
-            .copyWith(color: DiaryMainGrey.grey400),
+        style:
+            GlobalFontDesignSystem.m3Regular.copyWith(color: AppColors.grey400),
       ),
     );
   }

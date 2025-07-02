@@ -21,7 +21,7 @@ class PickView extends StatelessWidget {
         SizedBox(height: 4.h),
         Text("같이 세기의 여행을 떠나볼까요?",
             style: GlobalFontDesignSystem.m3Regular
-                .copyWith(color: DiaryMainGrey.grey800)),
+                .copyWith(color: AppColors.grey800)),
         SizedBox(height: 20.h),
         ButtonComponent(
           isEnable: true,
