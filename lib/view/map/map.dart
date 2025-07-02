@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:go_router/go_router.dart';
 import 'package:motunge/model/map/random_location_response.dart';
 import 'package:motunge/viewModel/map_viewmodel.dart';
 import 'package:motunge/view/map/views/pick_view.dart';
@@ -37,6 +38,10 @@ class _MapPageState extends State<MapPage> {
   String _selectedLocation = "";
   String _distance = "";
   String _duration = "";
+
+  // 필터 관련 상태
+  List<String> _selectedRegions = [];
+  List<String> _selectedDistricts = [];
 
   @override
   void initState() {
@@ -112,22 +117,29 @@ class _MapPageState extends State<MapPage> {
   void _drawPolyline(RandomLocationResponse location) {
     if (_mapController == null) return;
 
-    final coordinates = location.geometry.coordinates
-        .expand((list) => list)
-        .expand((list) => list)
-        .map((coord) => NLatLng(coord[1], coord[0]))
-        .toList();
+    // 각 폴리곤(도형)마다 별도의 오버레이를 생성
+    for (int polygonIndex = 0;
+        polygonIndex < location.geometry.coordinates.length;
+        polygonIndex++) {
+      final polygon = location.geometry.coordinates[polygonIndex];
 
-    final polyline = NPolygonOverlay(
-      id: 'polyline1',
-      coords: coordinates,
-      color: const Color(0x20125CED),
-      outlineColor: const Color(0xFF125CED),
-      outlineWidth: 3,
-    );
+      // 폴리곤은 여러 개의 링(외곽선, 홀)으로 구성될 수 있기 때문에 링을 모두 평탄화
+      final ringPoints = polygon.expand((ring) => ring);
 
-    _overlays.add(polyline);
-    _mapController!.addOverlay(polyline);
+      final coords =
+          ringPoints.map((coord) => NLatLng(coord[1], coord[0])).toList();
+
+      final polygonOverlay = NPolygonOverlay(
+        id: 'polygon_$polygonIndex',
+        coords: coords,
+        color: const Color(0x20125CED),
+        outlineColor: const Color(0xFF125CED),
+        outlineWidth: 3,
+      );
+
+      _overlays.add(polygonOverlay);
+      _mapController!.addOverlay(polygonOverlay);
+    }
   }
 
   void _clearOverlays() {
@@ -153,23 +165,53 @@ class _MapPageState extends State<MapPage> {
 
   Future<void> _onDrawDestination() async {
     try {
-      final location = await mapViewModel.getRandomLocation();
+      final location = await mapViewModel.getRandomLocation(
+        regions: _selectedRegions.isNotEmpty ? _selectedRegions : null,
+        districts: _selectedDistricts.isNotEmpty ? _selectedDistricts : null,
+      );
       setState(() {
         _step = MapStep.confirm;
       });
       await _setDestination(location, _destinationZoom);
     } catch (e) {
+      debugPrint('목적지 가져오기 실패: $e');
       _showErrorSnackBar('목적지를 가져오는데 실패했습니다.');
     }
   }
 
   Future<void> _onRedrawDestination() async {
     try {
-      final location = await mapViewModel.getRandomLocation();
+      final location = await mapViewModel.getRandomLocation(
+        regions: _selectedRegions.isNotEmpty ? _selectedRegions : null,
+        districts: _selectedDistricts.isNotEmpty ? _selectedDistricts : null,
+      );
+      debugPrint(location.geometry.coordinates.first.first.first.toString());
+      debugPrint(location.geometry.coordinates.first.first.last.toString());
+
       _clearOverlays();
       await _setDestination(location, _redrawZoom);
     } catch (e) {
+      debugPrint('목적지 가져오기 실패: $e');
       _showErrorSnackBar('목적지를 가져오는데 실패했습니다.');
+    }
+  }
+
+  Future<void> _openLocationFilter() async {
+    final result = await context.pushNamed(
+      'locationFilter',
+      queryParameters: {
+        if (_selectedRegions.isNotEmpty)
+          'selectedRegions': _selectedRegions.join(','),
+        if (_selectedDistricts.isNotEmpty)
+          'selectedDistricts': _selectedDistricts.join(','),
+      },
+    );
+
+    if (result != null && result is Map<String, dynamic>) {
+      setState(() {
+        _selectedRegions = List<String>.from(result['regions'] ?? []);
+        _selectedDistricts = List<String>.from(result['districts'] ?? []);
+      });
     }
   }
 
@@ -237,6 +279,13 @@ class _MapPageState extends State<MapPage> {
             await _initializeLocation();
           },
         ),
+        // 필터 버튼 (pick, confirm 단계에서만 표시)
+        if (_step != MapStep.navigation)
+          Positioned(
+            bottom: MediaQuery.of(context).size.height * 0.28,
+            right: 24.w,
+            child: _buildFilterButton(),
+          ),
         DraggableScrollableSheet(
           initialChildSize: _step == MapStep.navigation ? 0.4 : 0.28,
           maxChildSize: _step == MapStep.navigation ? 0.6 : 0.3,
@@ -259,13 +308,13 @@ class _MapPageState extends State<MapPage> {
                     SliverToBoxAdapter(
                       child: Center(
                         child: Container(
-                          decoration: const BoxDecoration(
-                            color: Color(0xffEFF0F2),
-                            borderRadius: BorderRadius.all(Radius.circular(2)),
+                          decoration: BoxDecoration(
+                            color: const Color(0xffEFF0F2),
+                            borderRadius: BorderRadius.circular(2.r),
                           ),
-                          height: 4,
-                          width: 80,
-                          margin: const EdgeInsets.symmetric(vertical: 16),
+                          height: 3.h,
+                          width: 90.w,
+                          margin: EdgeInsets.only(top: 16.h),
                         ),
                       ),
                     ),
@@ -304,6 +353,40 @@ class _MapPageState extends State<MapPage> {
           targetInfo: mapViewModel.getTargetInfo(),
         );
     }
+  }
+
+  Widget _buildFilterButton() {
+    final double size = 48.w;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: _openLocationFilter,
+        customBorder: const CircleBorder(),
+        child: Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Center(
+            child: Icon(
+              Icons.tune,
+              size: 24.w,
+              color: Colors.black,
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 

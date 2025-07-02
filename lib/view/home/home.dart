@@ -86,7 +86,7 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget _bottomSheet() {
     return DraggableScrollableSheet(
       initialChildSize: 0.052,
-      maxChildSize: 0.5,
+      maxChildSize: 0.35,
       minChildSize: 0.052,
       controller: sheetController,
       builder: (BuildContext context, scrollController) {

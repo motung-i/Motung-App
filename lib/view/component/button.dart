@@ -9,10 +9,12 @@ class ButtonComponent extends StatelessWidget {
     required this.isEnable,
     required this.text,
     this.onPressed,
+    this.enableColor,
   });
   final bool isEnable;
   final String text;
   final VoidCallback? onPressed;
+  final Color? enableColor;
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +23,9 @@ class ButtonComponent extends StatelessWidget {
       child: Container(
         height: 48.h,
         decoration: BoxDecoration(
-          color: isEnable ? DiaryColor.globalMainColor : DiaryMainGrey.grey500,
+          color: isEnable
+              ? (enableColor ?? DiaryColor.globalMainColor)
+              : DiaryMainGrey.grey500,
           borderRadius: BorderRadius.circular(8),
         ),
         alignment: Alignment.center,

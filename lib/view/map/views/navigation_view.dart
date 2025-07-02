@@ -83,10 +83,6 @@ class NavigationView extends StatelessWidget {
         else
           EmptyDataWidget(text: "AI 추천을 가져올 수 없어요."),
         SizedBox(height: 28.h),
-        Text("파노라마", style: GlobalFontDesignSystem.m2Semi),
-        SizedBox(height: 4.h),
-        EmptyDataWidget(text: "파노라마 이미지를 가져올 수 없어요."),
-        SizedBox(height: 25.h),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [

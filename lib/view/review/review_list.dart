@@ -5,6 +5,7 @@ import 'package:motunge/dataSource/map.dart';
 import 'package:motunge/dataSource/review.dart';
 import 'package:motunge/model/review/reviews_response.dart';
 import 'package:motunge/view/component/recommend_badge.dart';
+import 'package:motunge/view/component/report_dialog.dart';
 import 'package:motunge/view/designSystem/colors.dart';
 import 'package:motunge/view/designSystem/fonts.dart';
 
@@ -417,10 +418,37 @@ class _ReviewListState extends State<ReviewList> {
         ),
         SizedBox(width: 8.w),
         const Spacer(),
-        Text(
-          "신고",
-          style: GlobalFontDesignSystem.labelRegular.copyWith(
-            color: DiaryMainGrey.grey300,
+        GestureDetector(
+          onTap: () {
+            ReportDialog.show(
+              context,
+              onConfirm: (reasons) async {
+                if (reasons.isEmpty) return;
+
+                try {
+                  await _reviewDataSource.reportReview(
+                    review.reviewId,
+                    reasons,
+                  );
+
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('신고가 접수되었습니다.')),
+                  );
+                } catch (e) {
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('신고에 실패했습니다: $e')),
+                  );
+                }
+              },
+            );
+          },
+          child: Text(
+            "신고",
+            style: GlobalFontDesignSystem.labelRegular.copyWith(
+              color: DiaryMainGrey.grey300,
+            ),
           ),
         ),
       ],

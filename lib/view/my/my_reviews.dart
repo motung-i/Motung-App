@@ -184,14 +184,6 @@ class _MyReviewsPageState extends State<MyReviewsPage> {
             color: DiaryMainGrey.grey600,
           ),
         ),
-        SizedBox(width: 8.w),
-        const Spacer(),
-        Text(
-          "신고",
-          style: GlobalFontDesignSystem.labelRegular.copyWith(
-            color: DiaryMainGrey.grey300,
-          ),
-        ),
       ],
     );
   }
