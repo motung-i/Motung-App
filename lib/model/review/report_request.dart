@@ -1,11 +1,11 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'package:motunge/model/review/enum/report_reason.dart';
 
 part 'report_request.g.dart';
 
 @JsonSerializable()
 class ReportRequest {
-  @JsonKey(name: 'request')
-  final String reasons;
+  final List<ReportReason> reasons;
 
   ReportRequest({
     required this.reasons,

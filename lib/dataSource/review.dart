@@ -1,7 +1,9 @@
 import 'package:motunge/dataSource/base_data_source.dart';
+import 'package:motunge/model/review/report_request.dart';
 import 'package:motunge/model/review/reviews_response.dart';
 import 'package:motunge/model/review/review_request.dart';
 import 'package:dio/dio.dart';
+import 'package:motunge/model/review/enum/report_reason.dart';
 import 'dart:convert';
 
 class ReviewDataSource extends BaseDataSource {
@@ -83,6 +85,18 @@ class ReviewDataSource extends BaseDataSource {
       options: Options(
         contentType: 'multipart/form-data',
       ),
+    );
+  }
+
+  Future<void> reportReview(
+    String reviewId,
+    List<ReportReason> reasons,
+  ) async {
+    final data = ReportRequest(reasons: reasons).toJson();
+
+    await dio.post(
+      getUrl('/review/$reviewId/report'),
+      data: data,
     );
   }
 }
