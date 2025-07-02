@@ -23,24 +23,19 @@ class LocationFilterPage extends StatefulWidget {
 }
 
 class _LocationFilterPageState extends State<LocationFilterPage> {
-  // ============ Data Sources ============
   final MapDataSource _mapDataSource = MapDataSource();
-
-  // ============ Controllers ============
   final TextEditingController _searchController = TextEditingController();
 
-  // ============ State Variables ============
   List<String> _tabList = [];
   String _selectedTab = '';
   bool _isLoading = true;
 
   Set<String> _selectedRegions = <String>{};
-  Set<String> _selectedDistricts = <String>{};
+  Map<String, String> _selectedDistricts = <String, String>{};
+  Set<String> _selectedSpecialRegions = <String>{};
 
-  // Future 캐싱을 위한 Map
   final Map<String, Future<DistrictsResponse>> _districtsCache = {};
 
-  // ============ Lifecycle Methods ============
   @override
   void initState() {
     super.initState();
@@ -50,11 +45,10 @@ class _LocationFilterPageState extends State<LocationFilterPage> {
   @override
   void dispose() {
     _searchController.dispose();
-    _districtsCache.clear(); // 캐시 정리
+    _districtsCache.clear();
     super.dispose();
   }
 
-  // ============ Data Management Methods ============
   Future<void> _initializeData() async {
     try {
       final regionsResponse = await _mapDataSource.getRegions();
@@ -62,11 +56,10 @@ class _LocationFilterPageState extends State<LocationFilterPage> {
 
       if (_tabList.isNotEmpty) {
         _selectedTab = _tabList.first;
-        // 첫 번째 탭의 데이터를 미리 로드
         _preloadTabData(_selectedTab);
       }
 
-      _initializeSelections();
+      await _initializeSelections();
 
       if (mounted) {
         setState(() {
@@ -87,13 +80,47 @@ class _LocationFilterPageState extends State<LocationFilterPage> {
     }
   }
 
-  void _initializeSelections() {
+  Future<void> _initializeSelections() async {
     if (widget.initialSelectedRegions != null) {
-      _selectedRegions.addAll(widget.initialSelectedRegions!);
+      for (String region in widget.initialSelectedRegions!) {
+        if (_isSpecialRegion(region)) {
+          _selectedSpecialRegions.add(region);
+        } else {
+          _selectedRegions.add(region);
+        }
+      }
     }
+
     if (widget.initialSelectedDistricts != null) {
-      _selectedDistricts.addAll(widget.initialSelectedDistricts!);
+      await _initializeDistrictsWithRegions();
     }
+  }
+
+  Future<void> _initializeDistrictsWithRegions() async {
+    if (widget.initialSelectedDistricts == null) return;
+
+    for (String region in _tabList) {
+      if (region == '기타') continue;
+
+      try {
+        final districtsResponse = await _mapDataSource.getDistricts(region);
+        for (var districtType in districtsResponse.districts) {
+          for (String district in districtType.district) {
+            if (widget.initialSelectedDistricts!.contains(district)) {
+              _selectedDistricts[district] = region;
+              _selectedRegions.remove(region);
+            }
+          }
+        }
+      } catch (e) {
+        continue;
+      }
+    }
+  }
+
+  bool _isSpecialRegion(String region) {
+    const specialRegions = ['서울', '부산', '대구', '인천', '광주', '대전', '울산', '세종'];
+    return specialRegions.contains(region);
   }
 
   void _preloadTabData(String region) {
@@ -103,23 +130,19 @@ class _LocationFilterPageState extends State<LocationFilterPage> {
     );
   }
 
-  // ============ Event Handlers ============
   void _onTabSelected(int index) {
     setState(() {
       _selectedTab = _tabList[index];
     });
 
-    // 현재 탭과 인접한 탭들의 데이터를 미리 로드
     _preloadAdjacentTabs(index);
   }
 
   void _preloadAdjacentTabs(int currentIndex) {
-    // 이전 탭 미리 로드
     if (currentIndex > 0) {
       _preloadTabData(_tabList[currentIndex - 1]);
     }
 
-    // 다음 탭 미리 로드
     if (currentIndex < _tabList.length - 1) {
       _preloadTabData(_tabList[currentIndex + 1]);
     }
@@ -135,25 +158,39 @@ class _LocationFilterPageState extends State<LocationFilterPage> {
 
   void _toggleRegionSelection(String region) {
     setState(() {
-      if (_selectedRegions.contains(region)) {
-        _selectedRegions.remove(region);
+      if (_selectedTab == '기타') {
+        if (_selectedSpecialRegions.contains(region)) {
+          _selectedSpecialRegions.remove(region);
+        } else {
+          _selectedSpecialRegions.add(region);
+        }
       } else {
-        _selectedRegions.add(region);
-        // 지역을 선택하면 해당 지역의 모든 구/군 선택 해제
-        _selectedDistricts
-            .removeWhere((district) => _isDistrictInRegion(district, region));
+        if (_selectedRegions.contains(region)) {
+          _selectedRegions.remove(region);
+        } else {
+          _selectedRegions.add(region);
+          _selectedDistricts.removeWhere(
+              (district, districtRegion) => districtRegion == region);
+        }
       }
     });
   }
 
   void _toggleDistrictSelection(String district) {
     setState(() {
-      if (_selectedDistricts.contains(district)) {
-        _selectedDistricts.remove(district);
+      if (_selectedTab == '기타') {
+        if (_selectedSpecialRegions.contains(district)) {
+          _selectedSpecialRegions.remove(district);
+        } else {
+          _selectedSpecialRegions.add(district);
+        }
       } else {
-        _selectedDistricts.add(district);
-        // 구/군을 선택하면 해당 지역 선택 해제
-        _selectedRegions.remove(_selectedTab);
+        if (_selectedDistricts.containsKey(district)) {
+          _selectedDistricts.remove(district);
+        } else {
+          _selectedDistricts[district] = _selectedTab;
+          _selectedRegions.remove(_selectedTab);
+        }
       }
     });
   }
@@ -161,26 +198,29 @@ class _LocationFilterPageState extends State<LocationFilterPage> {
   void _removeSelectedItem(String item) {
     setState(() {
       _selectedRegions.remove(item);
+      _selectedSpecialRegions.remove(item);
       _selectedDistricts.remove(item);
     });
   }
 
   void _applyFilter() {
+    List<String> regions = [];
+    List<String> districts = [];
+
+    regions.addAll(_selectedRegions);
+    regions.addAll(_selectedSpecialRegions);
+    districts.addAll(_selectedDistricts.keys);
+
     Navigator.of(context).pop({
-      'regions': _selectedRegions.toList(),
-      'districts': _selectedDistricts.toList(),
+      'regions': regions,
+      'districts': districts,
     });
   }
 
-  // ============ Helper Methods ============
   bool _hasSelectedItems() {
-    return _selectedRegions.isNotEmpty || _selectedDistricts.isNotEmpty;
-  }
-
-  bool _isDistrictInRegion(String district, String region) {
-    // 실제로는 API 응답을 통해 확인해야 하지만,
-    // 여기서는 단순한 로직으로 처리
-    return true; // 임시 구현
+    return _selectedRegions.isNotEmpty ||
+        _selectedDistricts.isNotEmpty ||
+        _selectedSpecialRegions.isNotEmpty;
   }
 
   List<String> _filterRegionsBySearch(List<String> regions) {
@@ -192,7 +232,6 @@ class _LocationFilterPageState extends State<LocationFilterPage> {
         .toList();
   }
 
-  // ============ UI Building Methods ============
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -349,7 +388,6 @@ class _LocationFilterPageState extends State<LocationFilterPage> {
   }
 
   Widget _buildRegionContent(String region) {
-    // 캐시에서 Future를 가져오거나 새로 생성
     final cachedFuture = _districtsCache.putIfAbsent(
       region,
       () => _mapDataSource.getDistricts(region),
@@ -373,7 +411,6 @@ class _LocationFilterPageState extends State<LocationFilterPage> {
 
         return Column(
           children: [
-            // Type별로 구분된 섹션들
             ...districtsResponse.districts.asMap().entries.map((entry) {
               final index = entry.key;
               final districtType = entry.value;
@@ -390,8 +427,6 @@ class _LocationFilterPageState extends State<LocationFilterPage> {
                 ],
               );
             }).toList(),
-
-            // 전체 지역 선택 칩 (기타 탭이 아닌 경우에만)
             if (region != '기타') ...[
               SizedBox(height: 20.h),
               _buildEntireRegionChip(region),
@@ -461,9 +496,16 @@ class _LocationFilterPageState extends State<LocationFilterPage> {
   }
 
   Widget _buildRegionChip(String item, bool isDistrict) {
-    final bool isSelected = isDistrict
-        ? _selectedDistricts.contains(item)
-        : _selectedRegions.contains(item);
+    bool isSelected;
+
+    if (_selectedTab == '기타') {
+      isSelected = _selectedSpecialRegions.contains(item);
+    } else if (isDistrict) {
+      isSelected = _selectedDistricts.containsKey(item);
+    } else {
+      bool hasSelectedDistricts = _selectedDistricts.values.contains(item);
+      isSelected = _selectedRegions.contains(item) && !hasSelectedDistricts;
+    }
 
     return GestureDetector(
       onTap: () => isDistrict
@@ -486,7 +528,9 @@ class _LocationFilterPageState extends State<LocationFilterPage> {
   }
 
   Widget _buildEntireRegionChip(String region) {
-    final isSelected = _selectedRegions.contains(region);
+    bool hasSelectedDistricts = _selectedDistricts.values.contains(region);
+    final isSelected =
+        _selectedRegions.contains(region) && !hasSelectedDistricts;
 
     return Align(
       alignment: Alignment.centerLeft,
@@ -510,7 +554,11 @@ class _LocationFilterPageState extends State<LocationFilterPage> {
   }
 
   Widget _buildSelectedFilters() {
-    final allSelected = [..._selectedRegions, ..._selectedDistricts];
+    final allSelected = [
+      ..._selectedRegions,
+      ..._selectedSpecialRegions,
+      ..._selectedDistricts.keys
+    ];
     const int maxDisplayItems = 4;
 
     return Container(
