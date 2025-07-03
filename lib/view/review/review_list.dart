@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:motunge/dataSource/map.dart';
-import 'package:motunge/dataSource/review.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:motunge/bloc/review/review_bloc.dart';
+import 'package:motunge/bloc/review/review_event.dart';
+import 'package:motunge/bloc/review/review_state.dart';
 import 'package:motunge/model/review/reviews_response.dart';
-import 'package:motunge/view/component/app_tab_bar.dart';
+import 'package:motunge/view/component/region_tab_bar.dart';
 import 'package:motunge/view/component/recommend_badge.dart';
 import 'package:motunge/view/component/report_dialog.dart';
 import 'package:motunge/view/designSystem/colors.dart';
@@ -19,171 +21,29 @@ class ReviewList extends StatefulWidget {
 }
 
 class _ReviewListState extends State<ReviewList> {
-  // ============ Data Sources ============
-  final MapDataSource _mapDataSource = MapDataSource();
-  final ReviewDataSource _reviewDataSource = ReviewDataSource();
-
   // ============ State Variables ============
-  bool _showPhotoReviewsOnly = false;
-  List<String> _regions = [];
-  String _searchQuery = '';
-  int _currentTabIndex = 0;
+  final TextEditingController _searchController = TextEditingController();
+  final RegionTabBarController _tabController = RegionTabBarController();
 
-  final Map<String, List<Review>> _reviewsByRegion = {};
-  final Map<String, bool> _isLoadingByRegion = {};
-  final Map<String, bool> _isInitializedByRegion = {};
-
-  // ============ Lifecycle Methods ============
   @override
   void initState() {
     super.initState();
-    _initializeRegions();
-  }
-
-  // ============ Data Management Methods ============
-  Future<void> _initializeRegions() async {
-    try {
-      final regionsData = await _mapDataSource.getRegions();
-      setState(() {
-        _regions = regionsData.regions;
-      });
-
-      for (var region in _regions) {
-        _isInitializedByRegion[region] = false;
-        _isLoadingByRegion[region] = false;
-      }
-
-      if (_regions.isNotEmpty) {
-        await _fetchReviewsForRegion(_regions[0]);
-      }
-    } catch (e) {
-      if (!mounted) return;
-      ErrorHandler.showAppErrorSnackBar(
-        context,
-        AppError.fromException(e),
-      );
-    }
-  }
-
-  Future<void> _fetchReviewsForRegion(String region) async {
-    if (!mounted || _isInitializedByRegion[region] == true) return;
-
-    setState(() {
-      _isLoadingByRegion[region] = true;
-    });
-
-    try {
-      final response = await _reviewDataSource.getReviews(
-        region: region,
-        onlyByImage: _showPhotoReviewsOnly,
-        localAlias: _searchQuery.isNotEmpty ? _searchQuery : null,
-      );
-
-      if (!mounted) return;
-
-      setState(() {
-        _reviewsByRegion[region] = response.reviews;
-        _isLoadingByRegion[region] = false;
-        _isInitializedByRegion[region] = true;
-      });
-    } catch (e) {
-      if (!mounted) return;
-
-      ErrorHandler.showAppErrorSnackBar(
-        context,
-        AppError.fromException(e),
-      );
-
-      setState(() {
-        _isLoadingByRegion[region] = false;
-      });
-    }
-  }
-
-  Future<void> _refreshCurrentRegion() async {
-    if (_regions.isEmpty) return;
-
-    final currentRegion = _regions[_currentTabIndex];
-    setState(() {
-      _isInitializedByRegion[currentRegion] = false;
-    });
-    await _fetchReviewsForRegion(currentRegion);
-  }
-
-  // ============ Event Handlers ============
-  void _onSearchChanged(String value) {
-    setState(() {
-      _searchQuery = value;
-      if (_regions.isNotEmpty) {
-        final currentRegion = _regions[_currentTabIndex];
-        _isInitializedByRegion[currentRegion] = false;
-        _fetchReviewsForRegion(currentRegion);
-      }
+    // 초기 데이터 로드
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<ReviewBloc>().add(const ReviewRegionsRequested());
     });
   }
 
-  void _onPhotoFilterToggle() {
-    setState(() {
-      _showPhotoReviewsOnly = !_showPhotoReviewsOnly;
-      if (_regions.isNotEmpty) {
-        final currentRegion = _regions[_currentTabIndex];
-        _isInitializedByRegion[currentRegion] = false;
-      }
-    });
-
-    if (_regions.isNotEmpty) {
-      _fetchReviewsForRegion(_regions[_currentTabIndex]);
-    }
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
-  void _onTabChanged(int index) {
-    setState(() {
-      _currentTabIndex = index;
-    });
-    _fetchReviewsForRegion(_regions[index]);
-  }
-
-  Future<void> _handleReportReview(Review review) async {
-    ReportDialog.show(
-      context,
-      onConfirm: (reasons) async {
-        if (reasons.isEmpty) return;
-
-        try {
-          await _reviewDataSource.reportReview(review.reviewId, reasons);
-
-          if (!mounted) return;
-          ErrorHandler.showSuccessSnackBar(context, '신고가 접수되었습니다.');
-        } catch (e) {
-          if (!mounted) return;
-          ErrorHandler.showAppErrorSnackBar(
-            context,
-            AppError.fromException(e),
-          );
-        }
-      },
-    );
-  }
-
-  // ============ Helper Methods ============
-  int _getCurrentTabReviewCount() {
-    if (_regions.isEmpty) return 0;
-
-    final currentRegion = _regions[_currentTabIndex];
-    final reviews = _reviewsByRegion[currentRegion] ?? [];
-
-    if (_isLoadingByRegion[currentRegion] == true) return 0;
-
-    return _showPhotoReviewsOnly
-        ? reviews.where((review) => review.imageUrls.isNotEmpty).length
-        : reviews.length;
-  }
-
-  List<Review> _getFilteredReviews(String region) {
-    final reviews = _reviewsByRegion[region] ?? [];
-    return _showPhotoReviewsOnly
-        ? reviews.where((review) => review.imageUrls.isNotEmpty).toList()
-        : reviews;
+  void _syncTabController(ReviewsLoaded state) {
+    final targetIndex =
+        state.currentTabIndex.clamp(0, state.regions.length - 1);
+    _tabController.animateToTab(targetIndex);
   }
 
   // ============ UI Building Methods ============
@@ -191,24 +51,41 @@ class _ReviewListState extends State<ReviewList> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: Column(
-          children: [
-            _buildSearchField(),
-            _regions.isEmpty ? _buildLoadingRegions() : _buildTabView(),
-          ],
+        child: BlocConsumer<ReviewBloc, ReviewBlocState>(
+          listener: (context, state) {
+            if (state is ReviewError) {
+              ErrorHandler.showAppErrorSnackBar(
+                context,
+                AppError.fromException(Exception(state.message)),
+              );
+            } else if (state is ReviewReportSuccess) {
+              ErrorHandler.showSuccessSnackBar(context, '신고가 접수되었습니다.');
+            } else if (state is ReviewsLoaded && state.showReportSuccess) {
+              ErrorHandler.showSuccessSnackBar(context, '신고가 접수되었습니다.');
+            }
+          },
+          builder: (context, state) {
+            return Column(
+              children: [
+                _buildSearchField(context, state),
+                _buildContent(context, state),
+              ],
+            );
+          },
         ),
       ),
     );
   }
 
-  Widget _buildSearchField() {
+  Widget _buildSearchField(BuildContext context, ReviewBlocState state) {
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 24.h, horizontal: 24.w),
       child: TextField(
+        controller: _searchController,
         maxLines: 1,
         maxLength: 16,
         textAlignVertical: TextAlignVertical.center,
-        onChanged: _onSearchChanged,
+        onChanged: (value) => _onSearchChanged(context, state, value),
         decoration: InputDecoration(
           counterText: "",
           contentPadding:
@@ -241,45 +118,64 @@ class _ReviewListState extends State<ReviewList> {
     );
   }
 
-  Widget _buildLoadingRegions() {
-    return Expanded(
-      child: Center(
-        child: Text(
-          '지역 정보를 불러오는 중입니다...',
-          style: GlobalFontDesignSystem.m3Regular,
+  Widget _buildContent(BuildContext context, ReviewBlocState state) {
+    if (state is ReviewInitial || state is ReviewLoading) {
+      return Expanded(
+        child: Center(
+          child: Text(
+            '지역 정보를 불러오는 중입니다...',
+            style: GlobalFontDesignSystem.m3Regular,
+          ),
         ),
+      );
+    }
+
+    if (state is ReviewError) {
+      return Expanded(
+        child: Center(
+          child: Text(
+            '오류가 발생했습니다: ${state.message}',
+            style: GlobalFontDesignSystem.m3Regular,
+          ),
+        ),
+      );
+    }
+
+    if (state is ReviewsLoaded) {
+      return _buildTabView(context, state);
+    }
+
+    return const Expanded(child: SizedBox());
+  }
+
+  Widget _buildTabView(BuildContext context, ReviewsLoaded state) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _syncTabController(state);
+    });
+
+    return Expanded(
+      child: Column(
+        children: [
+          RegionTabBarWithController(
+            regions: state.regions,
+            controller: _tabController,
+            initialIndex: state.currentTabIndex,
+            onTabChanged: (index, region) =>
+                _onTabChanged(context, state, index),
+            height: 40.h,
+            showTabBarView: false,
+          ),
+          _buildFilterSection(context, state),
+          Expanded(
+            child:
+                _buildReviewListForRegion(context, state, state.currentRegion),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildTabView() {
-    return Expanded(
-      child: DefaultTabController(
-        length: _regions.length,
-        child: Column(
-          children: [
-            AppTabBar(
-              tabs: _regions,
-              onTap: _onTabChanged,
-              height: 40.h,
-            ),
-            _buildFilterSection(),
-            Expanded(
-              child: AppTabBarView(
-                children: _regions.map((region) {
-                  return _isLoadingByRegion[region] == true
-                      ? _buildLoadingIndicator()
-                      : _buildReviewListForRegion(region);
-                }).toList(),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFilterSection() {
+  Widget _buildFilterSection(BuildContext context, ReviewsLoaded state) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
       child: Column(
@@ -288,12 +184,12 @@ class _ReviewListState extends State<ReviewList> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                "총 ${_getCurrentTabReviewCount()}개",
+                "총 ${state.currentTabReviewCount}개",
                 style: GlobalFontDesignSystem.labelRegular.copyWith(
                   color: AppColors.grey700,
                 ),
               ),
-              _buildPhotoFilterToggle(),
+              _buildPhotoFilterToggle(context, state),
             ],
           ),
           SizedBox(height: 12.h),
@@ -307,9 +203,9 @@ class _ReviewListState extends State<ReviewList> {
     );
   }
 
-  Widget _buildPhotoFilterToggle() {
+  Widget _buildPhotoFilterToggle(BuildContext context, ReviewsLoaded state) {
     return GestureDetector(
-      onTap: _onPhotoFilterToggle,
+      onTap: () => _onPhotoFilterToggle(context, state),
       child: Row(
         children: [
           Text(
@@ -320,7 +216,7 @@ class _ReviewListState extends State<ReviewList> {
           ),
           SizedBox(width: 4.w),
           SvgPicture.asset(
-            _showPhotoReviewsOnly
+            state.showPhotoReviewsOnly
                 ? "assets/images/checked.svg"
                 : "assets/images/unchecked.svg",
             width: 24.w,
@@ -331,37 +227,43 @@ class _ReviewListState extends State<ReviewList> {
     );
   }
 
-  Widget _buildLoadingIndicator() {
-    return const Center(
-      child: CircularProgressIndicator(
-        color: AppColors.primary,
+  Widget _buildReviewListForRegion(
+    BuildContext context,
+    ReviewsLoaded state,
+    String region,
+  ) {
+    if (state.isCurrentRegionLoading) {
+      return const Center(
+        child: CircularProgressIndicator(
+          color: AppColors.primary,
+        ),
+      );
+    }
+
+    final filteredReviews = state.filteredReviews;
+
+    if (filteredReviews.isEmpty) {
+      return Center(
+        child: Text(
+          '리뷰가 없습니다',
+          style: GlobalFontDesignSystem.m3Regular,
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: () => _refreshCurrentRegion(context, state),
+      child: ListView.builder(
+        padding: EdgeInsets.symmetric(horizontal: 24.w),
+        itemCount: filteredReviews.length,
+        itemBuilder: (context, index) {
+          return _buildReviewItem(context, filteredReviews[index]);
+        },
       ),
     );
   }
 
-  Widget _buildReviewListForRegion(String region) {
-    final filteredReviews = _getFilteredReviews(region);
-
-    return filteredReviews.isEmpty
-        ? Center(
-            child: Text(
-              '리뷰가 없습니다',
-              style: GlobalFontDesignSystem.m3Regular,
-            ),
-          )
-        : RefreshIndicator(
-            onRefresh: _refreshCurrentRegion,
-            child: ListView.builder(
-              padding: EdgeInsets.symmetric(horizontal: 24.w),
-              itemCount: filteredReviews.length,
-              itemBuilder: (context, index) {
-                return _buildReviewItem(filteredReviews[index]);
-              },
-            ),
-          );
-  }
-
-  Widget _buildReviewItem(Review review) {
+  Widget _buildReviewItem(BuildContext context, Review review) {
     return Column(
       children: [
         Container(
@@ -375,7 +277,7 @@ class _ReviewListState extends State<ReviewList> {
               _buildReviewDescription(review),
               if (review.imageUrls.isNotEmpty) _buildReviewImages(review),
               SizedBox(height: 12.h),
-              _buildReviewFooter(review),
+              _buildReviewFooter(context, review),
             ],
           ),
         ),
@@ -448,7 +350,7 @@ class _ReviewListState extends State<ReviewList> {
     );
   }
 
-  Widget _buildReviewFooter(Review review) {
+  Widget _buildReviewFooter(BuildContext context, Review review) {
     return Row(
       children: [
         Text(
@@ -459,7 +361,7 @@ class _ReviewListState extends State<ReviewList> {
         ),
         const Spacer(),
         GestureDetector(
-          onTap: () => _handleReportReview(review),
+          onTap: () => _handleReportReview(context, review),
           child: Text(
             "신고",
             style: GlobalFontDesignSystem.labelRegular.copyWith(
@@ -468,6 +370,62 @@ class _ReviewListState extends State<ReviewList> {
           ),
         ),
       ],
+    );
+  }
+
+  // ============ Event Handlers ============
+  void _onSearchChanged(
+      BuildContext context, ReviewBlocState state, String value) {
+    if (state is ReviewsLoaded && state.currentRegion.isNotEmpty) {
+      context.read<ReviewBloc>().add(ReviewFilterChanged(
+            showPhotoReviewsOnly: state.showPhotoReviewsOnly,
+            searchQuery: value,
+            region: state.currentRegion,
+          ));
+    }
+  }
+
+  void _onPhotoFilterToggle(BuildContext context, ReviewsLoaded state) {
+    if (state.currentRegion.isNotEmpty) {
+      context.read<ReviewBloc>().add(ReviewFilterChanged(
+            showPhotoReviewsOnly: !state.showPhotoReviewsOnly,
+            searchQuery: state.searchQuery,
+            region: state.currentRegion,
+          ));
+    }
+  }
+
+  void _onTabChanged(BuildContext context, ReviewsLoaded state, int index) {
+    if (index < state.regions.length) {
+      context.read<ReviewBloc>().add(ReviewTabChanged(
+            tabIndex: index,
+            region: state.regions[index],
+          ));
+    }
+  }
+
+  Future<void> _refreshCurrentRegion(
+      BuildContext context, ReviewsLoaded state) async {
+    if (state.currentRegion.isNotEmpty) {
+      context.read<ReviewBloc>().add(ReviewRefreshRequested(
+            region: state.currentRegion,
+            onlyByImage: state.showPhotoReviewsOnly,
+            localAlias: state.searchQuery.isNotEmpty ? state.searchQuery : null,
+          ));
+    }
+  }
+
+  Future<void> _handleReportReview(BuildContext context, Review review) async {
+    ReportDialog.show(
+      context,
+      onConfirm: (reasons) async {
+        if (reasons.isEmpty) return;
+
+        context.read<ReviewBloc>().add(ReviewReportRequested(
+              reviewId: review.reviewId.toString(),
+              reasons: reasons,
+            ));
+      },
     );
   }
 }

@@ -2,13 +2,15 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:heif_converter/heif_converter.dart';
 import 'package:path/path.dart' as path;
-import 'package:motunge/dataSource/review.dart';
-import 'package:motunge/model/review/review_request.dart';
+import 'package:motunge/bloc/review/review_bloc.dart';
+import 'package:motunge/bloc/review/review_event.dart';
+import 'package:motunge/bloc/review/review_state.dart';
 import 'package:motunge/view/component/button.dart';
 import 'package:motunge/view/component/topbar.dart';
 import 'package:motunge/view/designSystem/colors.dart';
@@ -32,9 +34,7 @@ class ReviewImageAttachmentPage extends StatefulWidget {
 }
 
 class _ReviewImageAttachmentPageState extends State<ReviewImageAttachmentPage> {
-  final ReviewDataSource _reviewDataSource = ReviewDataSource();
   final List<File> _images = [];
-  bool _isLoading = false;
 
   Future<void> _pickImage() async {
     if (_images.length >= 3) return;
@@ -77,78 +77,74 @@ class _ReviewImageAttachmentPageState extends State<ReviewImageAttachmentPage> {
     }
   }
 
-  Future<void> _submitReview() async {
-    setState(() {
-      _isLoading = true;
-    });
+  void _submitReview() {
+    final imagePaths = _images.map((image) => image.path).toList();
 
-    try {
-      final request = ReviewRequest(
-        request: Request(
+    context.read<ReviewBloc>().add(ReviewWriteRequested(
           isRecommend: widget.isRecommend,
           description: widget.description,
-        ),
-        images: _images,
-      );
-
-      await _reviewDataSource.writeReview(request);
-
-      if (mounted) {
-        context.go('/map');
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('리뷰 작성에 실패했습니다: $e')),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
+          imagePaths: imagePaths,
+        ));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: Column(
-          children: [
-            const Topbar(
-              isSelectable: false,
-              isPopAble: true,
-              selectAbleText: null,
-              text: "이미지 첨부",
-            ),
-            Expanded(
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24.w),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SizedBox(height: 28.h),
-                    Text(
-                      "이미지 추가",
-                      style: GlobalFontDesignSystem.labelRegular
-                          .copyWith(color: AppColors.grey600),
-                    ),
-                    SizedBox(height: 8.h),
-                    _buildImageSection(),
-                    const Spacer(),
-                    ButtonComponent(
-                      isEnable: !_isLoading,
-                      text: _isLoading ? "작성 중..." : "작성 완료",
-                      onPressed: _submitReview,
-                    ),
-                    SizedBox(height: 40.h),
-                  ],
+        child: BlocConsumer<ReviewBloc, ReviewBlocState>(
+          listener: (context, state) {
+            if (state is ReviewWriteSuccess) {
+              context.go('/home');
+            } else if (state is ReviewWriteError) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(state.message)),
+              );
+            }
+          },
+          buildWhen: (previous, current) {
+            return current is ReviewWriteLoading ||
+                current is ReviewWriteSuccess ||
+                current is ReviewWriteError;
+          },
+          builder: (context, state) {
+            final isLoading = state is ReviewWriteLoading;
+
+            return Column(
+              children: [
+                const Topbar(
+                  isSelectable: false,
+                  isPopAble: true,
+                  selectAbleText: null,
+                  text: "이미지 첨부",
                 ),
-              ),
-            ),
-          ],
+                Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 24.w),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(height: 28.h),
+                        Text(
+                          "이미지 추가",
+                          style: GlobalFontDesignSystem.labelRegular
+                              .copyWith(color: AppColors.grey600),
+                        ),
+                        SizedBox(height: 8.h),
+                        _buildImageSection(),
+                        const Spacer(),
+                        ButtonComponent(
+                          isEnable: !isLoading,
+                          text: isLoading ? "작성 중..." : "작성 완료",
+                          onPressed: _submitReview,
+                        ),
+                        SizedBox(height: 40.h),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );

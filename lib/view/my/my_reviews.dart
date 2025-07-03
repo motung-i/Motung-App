@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:motunge/dataSource/review.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:motunge/bloc/review/review_bloc.dart';
+import 'package:motunge/bloc/review/review_event.dart';
+import 'package:motunge/bloc/review/review_state.dart';
 import 'package:motunge/model/review/reviews_response.dart';
 import 'package:motunge/view/component/recommend_badge.dart';
 import 'package:motunge/view/component/topBar.dart';
@@ -15,83 +18,86 @@ class MyReviewsPage extends StatefulWidget {
 }
 
 class _MyReviewsPageState extends State<MyReviewsPage> {
-  final ReviewDataSource _reviewDataSource = ReviewDataSource();
-  List<Review> _myReviews = [];
-  bool _isLoading = true;
-
   @override
   void initState() {
     super.initState();
-    _fetchMyReviews();
-  }
-
-  Future<void> _fetchMyReviews() async {
-    try {
-      final response = await _reviewDataSource.getOwnReviews();
-      if (mounted) {
-        setState(() {
-          _myReviews = response.reviews;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('내가 쓴 리뷰를 불러오는데 실패했습니다: $e')),
-        );
-      }
-    }
+    context.read<ReviewBloc>().add(const MyReviewsRequested());
   }
 
   Future<void> _refreshMyReviews() async {
-    setState(() {
-      _isLoading = true;
-    });
-    await _fetchMyReviews();
+    context.read<ReviewBloc>().add(const MyReviewsRefreshRequested());
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: Column(
-          children: [
-            const Topbar(
-              isSelectable: false,
-              isPopAble: true,
-              selectAbleText: null,
-              text: "내가 쓴 리뷰",
-            ),
-            Expanded(
-              child: _isLoading
-                  ? const Center(
-                      child: CircularProgressIndicator(
-                      color: AppColors.globalMainColor,
-                    ))
-                  : _myReviews.isEmpty
-                      ? Center(
-                          child: Text(
-                          '작성한 리뷰가 없습니다.',
-                          style: GlobalFontDesignSystem.m3Regular,
-                        ))
-                      : RefreshIndicator(
-                          onRefresh: _refreshMyReviews,
-                          child: ListView.builder(
-                            padding: EdgeInsets.symmetric(horizontal: 24.w),
-                            itemCount: _myReviews.length,
-                            itemBuilder: (context, index) {
-                              return _buildReviewItem(_myReviews[index]);
-                            },
-                          ),
-                        ),
-            ),
-          ],
+        child: BlocConsumer<ReviewBloc, ReviewBlocState>(
+          listener: (context, state) {
+            if (state is MyReviewsError) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(state.message)),
+              );
+            }
+          },
+          buildWhen: (previous, current) {
+            return current is MyReviewsLoading ||
+                current is MyReviewsLoaded ||
+                current is MyReviewsError;
+          },
+          builder: (context, state) {
+            return Column(
+              children: [
+                const Topbar(
+                  isSelectable: false,
+                  isPopAble: true,
+                  selectAbleText: null,
+                  text: "내가 쓴 리뷰",
+                ),
+                Expanded(
+                  child: _buildContent(state),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
+  }
+
+  Widget _buildContent(ReviewBlocState state) {
+    if (state is MyReviewsLoading) {
+      return const Center(
+        child: CircularProgressIndicator(
+          color: AppColors.globalMainColor,
+        ),
+      );
+    } else if (state is MyReviewsLoaded) {
+      if (state.myReviews.isEmpty) {
+        return Center(
+          child: Text(
+            '작성한 리뷰가 없습니다.',
+            style: GlobalFontDesignSystem.m3Regular,
+          ),
+        );
+      }
+      return RefreshIndicator(
+        onRefresh: _refreshMyReviews,
+        child: ListView.builder(
+          padding: EdgeInsets.symmetric(horizontal: 24.w),
+          itemCount: state.myReviews.length,
+          itemBuilder: (context, index) {
+            return _buildReviewItem(state.myReviews[index]);
+          },
+        ),
+      );
+    } else {
+      return const Center(
+        child: CircularProgressIndicator(
+          color: AppColors.globalMainColor,
+        ),
+      );
+    }
   }
 
   Widget _buildReviewItem(Review review) {
@@ -129,7 +135,7 @@ class _MyReviewsPageState extends State<MyReviewsPage> {
           style: GlobalFontDesignSystem.m2Semi,
         ),
         Text(
-          " · ${review.nickname ?? "익명"}",
+          " · ${review.nickname}",
           style: GlobalFontDesignSystem.labelRegular.copyWith(
             color: AppColors.grey700,
           ),

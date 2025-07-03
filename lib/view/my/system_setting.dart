@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:go_router/go_router.dart';
-import 'package:motunge/routes/navigation_helper.dart';
+import 'package:motunge/bloc/auth/auth_bloc.dart';
+import 'package:motunge/bloc/auth/auth_event.dart';
+import 'package:motunge/bloc/auth/auth_state.dart';
 import 'package:motunge/utils/error_handler.dart';
 import 'package:motunge/view/component/confirmation_dialog.dart';
 import 'package:motunge/view/component/menu_list_item.dart';
 import 'package:motunge/view/component/topBar.dart';
 import 'package:motunge/view/designSystem/colors.dart';
 import 'package:motunge/view/designSystem/fonts.dart';
-import 'package:motunge/viewModel/auth_viewmodel.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class SystemSettingPage extends StatelessWidget {
@@ -18,20 +20,35 @@ class SystemSettingPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        body: SafeArea(
-            child: Column(
-      children: [
-        Topbar(
-          isSelectable: false,
-          isPopAble: true,
-          selectAbleText: null,
-          text: "시스템 설정",
+      body: SafeArea(
+        child: BlocListener<AuthBloc, AuthBlocState>(
+          listener: (context, state) {
+            if (state is AuthUnauthenticated) {
+              context.go('/splash');
+            } else if (state is AuthError) {
+              ErrorHandler.showErrorSnackBar(
+                context,
+                '처리 중 오류가 발생했습니다: ${state.message}',
+              );
+            }
+          },
+          child: Column(
+            children: [
+              Topbar(
+                isSelectable: false,
+                isPopAble: true,
+                selectAbleText: null,
+                text: "시스템 설정",
+              ),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 24.w),
+                child: _buildSystemConfig(context),
+              ),
+            ],
+          ),
         ),
-        Padding(
-            padding: EdgeInsets.symmetric(horizontal: 24.w),
-            child: _buildSystemConfig(context)),
-      ],
-    )));
+      ),
+    );
   }
 }
 
@@ -41,18 +58,8 @@ void _showDeleteAccountDialog(BuildContext context) {
     title: "정말 회원탈퇴 하시겠습니까?",
     content: "탈퇴 시 모든 데이터가 삭제되며\n복구할 수 없습니다.",
     confirmText: "탈퇴",
-    onConfirm: () async {
-      try {
-        await AuthViewModel().deleteAccount();
-        Navigation.toLogin();
-      } catch (e) {
-        if (context.mounted) {
-          ErrorHandler.showErrorSnackBar(
-            context,
-            '회원탈퇴 중 오류가 발생했습니다.',
-          );
-        }
-      }
+    onConfirm: () {
+      context.read<AuthBloc>().add(const AuthAccountDeleteRequested());
     },
   );
 }
@@ -106,7 +113,7 @@ Widget _buildSystemConfig(BuildContext context) {
         height: 24.h,
       ),
       GestureDetector(
-        onTap: () => AuthViewModel().logout(),
+        onTap: () => context.read<AuthBloc>().add(const AuthLogoutRequested()),
         child: Row(
           children: [
             SvgPicture.asset(

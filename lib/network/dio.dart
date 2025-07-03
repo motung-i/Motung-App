@@ -1,8 +1,11 @@
 import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:motunge/bloc/auth/auth_bloc.dart';
+import 'package:motunge/bloc/auth/auth_event.dart';
 import 'package:motunge/model/auth/token_refresh_request.dart';
 import 'package:motunge/model/auth/oauth_response.dart';
 import 'package:motunge/routes/app_router.dart';
@@ -143,7 +146,17 @@ class _AppDio with DioMixin implements Dio {
   }
 
   Future<void> _handleLogout() async {
-    await AppRouter.authNotifier.logout();
+    // 저장된 토큰들 삭제
+    await _storage.delete(key: AppConstants.accessTokenKey);
+    await _storage.delete(key: AppConstants.refreshTokenKey);
+
+    // NavigatorKey를 통해 현재 context에서 AuthBloc에 접근
+    final context = AppRouter.rootNavigatorKey.currentContext;
+    if (context != null) {
+      if (context.mounted) {
+        context.read<AuthBloc>().add(const AuthLogoutRequested());
+      }
+    }
   }
 }
 

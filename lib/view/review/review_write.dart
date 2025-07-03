@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:motunge/view/component/button.dart';
 import 'package:motunge/view/component/confirmation_dialog.dart';
@@ -8,7 +9,8 @@ import 'package:motunge/view/component/location_badge.dart';
 import 'package:motunge/view/component/topbar.dart';
 import 'package:motunge/view/designSystem/colors.dart';
 import 'package:motunge/view/designSystem/fonts.dart';
-import 'package:motunge/viewModel/map_viewmodel.dart';
+import 'package:motunge/bloc/map/map_bloc.dart';
+import 'package:motunge/bloc/map/map_event.dart';
 import 'package:motunge/utils/error_handler.dart';
 
 class ReviewWrite extends StatefulWidget {
@@ -24,11 +26,9 @@ class ReviewWrite extends StatefulWidget {
 }
 
 class _ReviewWriteState extends State<ReviewWrite> {
-  // ============ State Variables ============
   bool? _isRecommend;
   String _reviewText = "";
 
-  // ============ Navigation Methods ============
   void _goToNextStep() {
     if (!_validateForm()) {
       return;
@@ -55,7 +55,7 @@ class _ReviewWriteState extends State<ReviewWrite> {
       cancelText: "취소",
       onConfirm: () {
         try {
-          MapViewmodel().endTour();
+          context.read<MapBloc>().add(const MapTourEndRequested());
           context.go('/home');
         } catch (e) {
           ErrorHandler.showAppErrorSnackBar(
@@ -67,7 +67,6 @@ class _ReviewWriteState extends State<ReviewWrite> {
     );
   }
 
-  // ============ Validation Methods ============
   bool _validateForm() {
     if (_isRecommend == null) {
       ErrorHandler.showErrorSnackBar(
@@ -94,7 +93,6 @@ class _ReviewWriteState extends State<ReviewWrite> {
     return _isRecommend != null && _reviewText.trim().isNotEmpty;
   }
 
-  // ============ Event Handlers ============
   void _onRecommendChanged(bool isRecommend) {
     setState(() {
       _isRecommend = isRecommend;
@@ -107,7 +105,6 @@ class _ReviewWriteState extends State<ReviewWrite> {
     });
   }
 
-  // ============ UI Building Methods ============
   @override
   Widget build(BuildContext context) {
     return Scaffold(

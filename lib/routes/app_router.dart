@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:motunge/state/auth_notifier.dart';
+import 'package:motunge/bloc/auth/auth_bloc.dart';
+import 'package:motunge/routes/router_notifier.dart';
 import 'package:motunge/view/common/scaffold_with_nav_bar.dart';
 import 'package:motunge/view/common/splash_page.dart';
 import 'package:motunge/view/home/home.dart';
@@ -24,142 +25,146 @@ class AppRouter {
   static final GlobalKey<NavigatorState> rootNavigatorKey =
       GlobalKey<NavigatorState>();
 
-  static final AuthNotifier authNotifier = AuthNotifier();
+  static GoRouter createRouter(AuthBloc authBloc) {
+    final routerNotifier = RouterNotifier(authBloc);
 
-  static final GoRouter router = GoRouter(
-    refreshListenable: authNotifier,
-    navigatorKey: rootNavigatorKey,
-    redirect: (context, state) {
-      final status = authNotifier.status;
-      final isSplash = state.fullPath == '/splash';
-      final isLoggingIn = state.fullPath == '/login';
-      final isOnboarding = state.fullPath == '/onboarding';
+    return GoRouter(
+      refreshListenable: routerNotifier,
+      navigatorKey: rootNavigatorKey,
+      redirect: (context, state) {
+        final status = routerNotifier.authStatus;
+        final isSplash = state.fullPath == '/splash';
+        final isLoggingIn = state.fullPath == '/login';
+        final isOnboarding = state.fullPath == '/onboarding';
 
-      switch (status) {
-        case AuthStatus.loading:
-          return isSplash ? null : '/splash';
-        case AuthStatus.unauthenticated:
-          return isLoggingIn ? null : '/login';
-        case AuthStatus.needRegister:
-          return isOnboarding ? null : '/onboarding';
-        case AuthStatus.authenticated:
-          if (isLoggingIn || isOnboarding || isSplash) return '/home';
-          return null;
-      }
-    },
-    initialLocation: '/splash',
-    routes: [
-      GoRoute(
-        path: '/splash',
-        name: 'splash',
-        builder: (context, state) => const SplashPage(),
+        switch (status) {
+          case AuthStatus.loading:
+            if (isLoggingIn) return null;
+            return isSplash ? null : '/splash';
+          case AuthStatus.unauthenticated:
+            return isLoggingIn ? null : '/login';
+          case AuthStatus.needRegister:
+            return isOnboarding ? null : '/onboarding';
+          case AuthStatus.authenticated:
+            if (isLoggingIn || isOnboarding || isSplash) return '/home';
+            return null;
+        }
+      },
+      initialLocation: '/splash',
+      routes: [
+        GoRoute(
+          path: '/splash',
+          name: 'splash',
+          builder: (context, state) => const SplashPage(),
+        ),
+        GoRoute(
+          path: '/login',
+          name: 'login',
+          builder: (context, state) => const LoginPage(),
+        ),
+        GoRoute(
+          path: '/onboarding',
+          name: 'onboarding',
+          builder: (context, state) => const Onboarding(),
+        ),
+        GoRoute(
+          path: '/review/write',
+          name: 'reviewWrite',
+          builder: (context, state) {
+            final location = state.uri.queryParameters['location'] ?? '';
+            return ReviewWrite(location: location);
+          },
+        ),
+        GoRoute(
+          path: '/review/attach-image',
+          name: 'reviewAttachImage',
+          builder: (context, state) {
+            final location = state.uri.queryParameters['location'] ?? '';
+            final isRecommend =
+                state.uri.queryParameters['isRecommend'] == 'true';
+            final description = state.uri.queryParameters['description'] ?? '';
+            return ReviewImageAttachmentPage(
+              location: location,
+              isRecommend: isRecommend,
+              description: description,
+            );
+          },
+        ),
+        GoRoute(
+          path: '/my/change-nickname',
+          name: 'changeNickname',
+          builder: (context, state) => const ChangeNickname(),
+        ),
+        GoRoute(
+          path: '/my/reviews',
+          name: 'myReviews',
+          builder: (context, state) => const MyReviewsPage(),
+        ),
+        GoRoute(
+          path: '/my/system-setting',
+          name: 'systemSetting',
+          builder: (context, state) => const SystemSettingPage(),
+        ),
+        GoRoute(
+          path: '/map/route-selection',
+          name: 'routeSelection',
+          builder: (context, state) => const RouteSelectionView(),
+        ),
+        GoRoute(
+          path: '/map/navigation-guide',
+          name: 'navigationGuide',
+          builder: (context, state) => const NavigationGuideView(),
+        ),
+        GoRoute(
+          path: '/map/location-filter',
+          name: 'locationFilter',
+          builder: (context, state) {
+            final selectedRegions =
+                state.uri.queryParameters['selectedRegions']?.split(',') ?? [];
+            final selectedDistricts =
+                state.uri.queryParameters['selectedDistricts']?.split(',') ??
+                    [];
+            return LocationFilterPage(
+              initialSelectedRegions:
+                  selectedRegions.isEmpty ? null : selectedRegions,
+              initialSelectedDistricts:
+                  selectedDistricts.isEmpty ? null : selectedDistricts,
+            );
+          },
+        ),
+        ShellRoute(
+          builder: (context, state, child) {
+            return ScaffoldWithNavBar(child: child);
+          },
+          routes: [
+            GoRoute(
+              path: '/home',
+              name: 'home',
+              builder: (context, state) => const MyHomePage(),
+            ),
+            GoRoute(
+              path: '/review',
+              name: 'review',
+              builder: (context, state) => const ReviewList(),
+            ),
+            GoRoute(
+              path: '/map',
+              name: 'map',
+              builder: (context, state) => const MapPage(),
+            ),
+            GoRoute(
+              path: '/my',
+              name: 'my',
+              builder: (context, state) => const MyPage(),
+            ),
+          ],
+        ),
+      ],
+      errorBuilder: (context, state) => Scaffold(
+        body: Center(
+          child: Text('페이지를 찾을 수 없습니다: ${state.uri.path}'),
+        ),
       ),
-      GoRoute(
-        path: '/login',
-        name: 'login',
-        builder: (context, state) => const LoginPage(),
-      ),
-      GoRoute(
-        path: '/onboarding',
-        name: 'onboarding',
-        builder: (context, state) => const Onboarding(),
-      ),
-      GoRoute(
-        path: '/review/write',
-        name: 'reviewWrite',
-        builder: (context, state) {
-          final location = state.uri.queryParameters['location'] ?? '';
-          return ReviewWrite(location: location);
-        },
-      ),
-      GoRoute(
-        path: '/review/attach-image',
-        name: 'reviewAttachImage',
-        builder: (context, state) {
-          final location = state.uri.queryParameters['location'] ?? '';
-          final isRecommend =
-              state.uri.queryParameters['isRecommend'] == 'true';
-          final description = state.uri.queryParameters['description'] ?? '';
-          return ReviewImageAttachmentPage(
-            location: location,
-            isRecommend: isRecommend,
-            description: description,
-          );
-        },
-      ),
-      GoRoute(
-        path: '/my/change-nickname',
-        name: 'changeNickname',
-        builder: (context, state) => const ChangeNickname(),
-      ),
-      GoRoute(
-        path: '/my/reviews',
-        name: 'myReviews',
-        builder: (context, state) => const MyReviewsPage(),
-      ),
-      GoRoute(
-        path: '/my/system-setting',
-        name: 'systemSetting',
-        builder: (context, state) => const SystemSettingPage(),
-      ),
-      GoRoute(
-        path: '/map/route-selection',
-        name: 'routeSelection',
-        builder: (context, state) => const RouteSelectionView(),
-      ),
-      GoRoute(
-        path: '/map/navigation-guide',
-        name: 'navigationGuide',
-        builder: (context, state) => const NavigationGuideView(),
-      ),
-      GoRoute(
-        path: '/map/location-filter',
-        name: 'locationFilter',
-        builder: (context, state) {
-          final selectedRegions =
-              state.uri.queryParameters['selectedRegions']?.split(',') ?? [];
-          final selectedDistricts =
-              state.uri.queryParameters['selectedDistricts']?.split(',') ?? [];
-          return LocationFilterPage(
-            initialSelectedRegions:
-                selectedRegions.isEmpty ? null : selectedRegions,
-            initialSelectedDistricts:
-                selectedDistricts.isEmpty ? null : selectedDistricts,
-          );
-        },
-      ),
-      ShellRoute(
-        builder: (context, state, child) {
-          return ScaffoldWithNavBar(child: child);
-        },
-        routes: [
-          GoRoute(
-            path: '/home',
-            name: 'home',
-            builder: (context, state) => const MyHomePage(),
-          ),
-          GoRoute(
-            path: '/review',
-            name: 'review',
-            builder: (context, state) => const ReviewList(),
-          ),
-          GoRoute(
-            path: '/map',
-            name: 'map',
-            builder: (context, state) => const MapPage(),
-          ),
-          GoRoute(
-            path: '/my',
-            name: 'my',
-            builder: (context, state) => const MyPage(),
-          ),
-        ],
-      ),
-    ],
-    errorBuilder: (context, state) => Scaffold(
-      body: Center(
-        child: Text('페이지를 찾을 수 없습니다: ${state.uri.path}'),
-      ),
-    ),
-  );
+    );
+  }
 }

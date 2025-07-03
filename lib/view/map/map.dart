@@ -1,12 +1,16 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
+import 'package:motunge/bloc/map/map_bloc.dart';
+import 'package:motunge/bloc/map/map_event.dart';
+import 'package:motunge/bloc/map/map_state.dart';
 import 'package:motunge/model/map/random_location_response.dart';
-import 'package:motunge/viewModel/map_viewmodel.dart';
+import 'package:motunge/model/map/target_info_response.dart';
 import 'package:motunge/view/map/views/pick_view.dart';
 import 'package:motunge/view/map/views/confirm_view.dart';
 import 'package:motunge/view/map/views/navigation_view.dart';
@@ -30,7 +34,6 @@ class _MapPageState extends State<MapPage> {
   final mapControllerCompleter = Completer<NaverMapController>();
   final DraggableScrollableController sheetController =
       DraggableScrollableController();
-  final mapViewModel = MapViewmodel();
   final List<NOverlay> _overlays = [];
 
   NaverMapController? _mapController;
@@ -38,6 +41,9 @@ class _MapPageState extends State<MapPage> {
   String _selectedLocation = "";
   String _distance = "";
   String _duration = "";
+  // ignore: unused_field
+  RandomLocationResponse? _currentLocation;
+  TargetInfoResponse? _targetInfo;
 
   // 필터 관련 상태
   List<String> _selectedRegions = [];
@@ -63,37 +69,11 @@ class _MapPageState extends State<MapPage> {
 
   Future<void> _initializeLocation() async {
     try {
-      final hasPermission = await _ensureLocationPermission();
-      if (!hasPermission) return;
-
-      final serviceEnabled = await mapViewModel.checkServiceEnabled();
-      if (!serviceEnabled) {
-        _showErrorSnackBar('위치 서비스를 활성화해주세요.');
-        return;
-      }
-
-      final position = await mapViewModel.getCurrentLocation();
-      await _updateMapCamera(
-        NLatLng(position.latitude, position.longitude),
-        _initialZoom,
-      );
+      context.read<MapBloc>().add(const MapPermissionChecked());
     } catch (e) {
       debugPrint('Error getting location: $e');
-      _showErrorSnackBar('위치 정보를 가져오는데 실패했습니다.');
+      _showErrorSnackBar('위치 정보 가져오기에 실패했습니다.');
     }
-  }
-
-  Future<bool> _ensureLocationPermission() async {
-    final permission = await mapViewModel.checkPermission();
-    if (permission) return true;
-
-    final permissionResult = await mapViewModel.requestPermission();
-    if (permissionResult == LocationPermission.denied ||
-        permissionResult == LocationPermission.deniedForever) {
-      _showErrorSnackBar('위치 권한이 필요합니다.');
-      return false;
-    }
-    return true;
   }
 
   void _showErrorSnackBar(String message) {
@@ -157,6 +137,7 @@ class _MapPageState extends State<MapPage> {
       _selectedLocation = location.local;
       _distance = _tempDistance;
       _duration = _tempDuration;
+      _currentLocation = location;
     });
 
     await _updateMapCamera(NLatLng(location.lat, location.lon), zoom);
@@ -164,36 +145,17 @@ class _MapPageState extends State<MapPage> {
   }
 
   Future<void> _onDrawDestination() async {
-    try {
-      final location = await mapViewModel.getRandomLocation(
-        regions: _selectedRegions.isNotEmpty ? _selectedRegions : null,
-        districts: _selectedDistricts.isNotEmpty ? _selectedDistricts : null,
-      );
-      setState(() {
-        _step = MapStep.confirm;
-      });
-      await _setDestination(location, _destinationZoom);
-    } catch (e) {
-      debugPrint('목적지 가져오기 실패: $e');
-      _showErrorSnackBar('목적지를 가져오는데 실패했습니다.');
-    }
+    context.read<MapBloc>().add(MapRandomLocationRequested(
+          regions: _selectedRegions.isNotEmpty ? _selectedRegions : null,
+          districts: _selectedDistricts.isNotEmpty ? _selectedDistricts : null,
+        ));
   }
 
   Future<void> _onRedrawDestination() async {
-    try {
-      final location = await mapViewModel.getRandomLocation(
-        regions: _selectedRegions.isNotEmpty ? _selectedRegions : null,
-        districts: _selectedDistricts.isNotEmpty ? _selectedDistricts : null,
-      );
-      debugPrint(location.geometry.coordinates.first.first.first.toString());
-      debugPrint(location.geometry.coordinates.first.first.last.toString());
-
-      _clearOverlays();
-      await _setDestination(location, _redrawZoom);
-    } catch (e) {
-      debugPrint('목적지 가져오기 실패: $e');
-      _showErrorSnackBar('목적지를 가져오는데 실패했습니다.');
-    }
+    context.read<MapBloc>().add(MapRandomLocationRequested(
+          regions: _selectedRegions.isNotEmpty ? _selectedRegions : null,
+          districts: _selectedDistricts.isNotEmpty ? _selectedDistricts : null,
+        ));
   }
 
   Future<void> _openLocationFilter() async {
@@ -216,26 +178,7 @@ class _MapPageState extends State<MapPage> {
   }
 
   Future<void> _onConfirmDestination() async {
-    try {
-      await mapViewModel.startTour();
-      // AI 정보 생성 요청
-      mapViewModel.requestGenerateTourInfo().then((_) {
-        if (!mounted) return;
-        setState(() {});
-      }).catchError((e) {
-        debugPrint('AI 정보 생성 실패: $e');
-      });
-
-      if (!mounted) return;
-
-      setState(() {
-        _step = MapStep.navigation;
-      });
-    } catch (e) {
-      if (!mounted) return;
-
-      _showErrorSnackBar('투어를 시작하는데 실패했습니다.');
-    }
+    context.read<MapBloc>().add(const MapTourStartRequested());
   }
 
   void _onEndNavigation() {
@@ -244,105 +187,161 @@ class _MapPageState extends State<MapPage> {
       _selectedLocation = "";
       _distance = "";
       _duration = "";
-      mapViewModel.endTour();
+      _currentLocation = null;
+      _targetInfo = null;
     });
     _clearOverlays();
+    context.read<MapBloc>().add(const MapTourEndRequested());
   }
 
   Future<void> _checkCurrentTour() async {
-    try {
-      final tourInfo = await mapViewModel.getOwnTourInfo();
-      if (!mounted) return;
-
-      if (tourInfo != null) {
-        setState(() {
-          _step = MapStep.navigation;
-          _selectedLocation = tourInfo.local;
-          _distance = _tempDistance;
-          _duration = _tempDuration;
-        });
-        await _setDestination(tourInfo, _destinationZoom);
-      }
-    } catch (e) {
-      debugPrint('현재 투어 정보 확인 실패: $e');
-    }
+    context.read<MapBloc>().add(const MapTourInfoRequested());
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(children: [
-        NaverMapView(
-          onMapReady: (controller) async {
-            _mapController = controller;
-            mapControllerCompleter.complete(controller);
-            await _initializeLocation();
-          },
-        ),
-        // 필터 버튼 (pick, confirm 단계에서만 표시)
-        if (_step != MapStep.navigation)
-          Positioned(
-            bottom: MediaQuery.of(context).size.height * 0.28,
-            right: 24.w,
-            child: _buildFilterButton(),
+    return BlocListener<MapBloc, MapBlocState>(
+      listener: (context, state) {
+        if (state is MapError) {
+          _showErrorSnackBar(state.message);
+        } else if (state is MapPermissionStatus) {
+          if (state.permission == LocationPermission.denied ||
+              state.permission == LocationPermission.deniedForever) {
+            context.read<MapBloc>().add(const MapPermissionRequested());
+          } else {
+            context.read<MapBloc>().add(const MapLocationServiceChecked());
+          }
+        } else if (state is MapLocationServiceEnabled) {
+          if (state.isEnabled) {
+            context.read<MapBloc>().add(const MapCurrentLocationRequested());
+          } else {
+            _showErrorSnackBar('위치 서비스를 활성화해주세요.');
+          }
+        } else if (state is MapCurrentLocationLoaded) {
+          _updateMapCamera(
+            NLatLng(state.position.latitude, state.position.longitude),
+            _initialZoom,
+          );
+        } else if (state is MapRandomLocationLoaded) {
+          if (_step == MapStep.pick) {
+            setState(() {
+              _step = MapStep.confirm;
+            });
+            _setDestination(state.randomLocation, _destinationZoom);
+          } else {
+            // 재뽑기의 경우
+            _clearOverlays();
+            _setDestination(state.randomLocation, _redrawZoom);
+          }
+        } else if (state is MapTourStarted) {
+          setState(() {
+            _step = MapStep.navigation;
+            _targetInfo = state.targetInfo;
+          });
+          // AI 정보 생성 요청
+          context.read<MapBloc>().add(const MapTourInfoGenerationRequested());
+        } else if (state is MapTourInfoLoaded) {
+          if (state.tourInfo != null) {
+            setState(() {
+              _step = MapStep.navigation;
+              _selectedLocation = state.tourInfo!.local;
+              _distance = _tempDistance;
+              _duration = _tempDuration;
+              _currentLocation = state.tourInfo;
+              _targetInfo = state.targetInfo;
+            });
+            _setDestination(state.tourInfo!, _destinationZoom);
+          }
+        } else if (state is MapTourEnded) {
+          // 투어 종료 후 처리는 _onEndNavigation에서 이미 처리됨
+        } else if (state is MapTourInfoGenerated) {
+          setState(() {
+            _targetInfo = state.targetInfo;
+          });
+        }
+      },
+      child: Scaffold(
+        body: Stack(children: [
+          NaverMapView(
+            onMapReady: (controller) async {
+              _mapController = controller;
+              mapControllerCompleter.complete(controller);
+              await _initializeLocation();
+            },
           ),
-        DraggableScrollableSheet(
-          initialChildSize: _step == MapStep.navigation ? 0.4 : 0.28,
-          maxChildSize: _step == MapStep.navigation ? 0.6 : 0.3,
-          minChildSize: _step == MapStep.navigation ? 0.4 : 0.28,
-          controller: sheetController,
-          builder: (BuildContext context, scrollController) {
-            return Container(
-              clipBehavior: Clip.hardEdge,
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(20),
-                  topRight: Radius.circular(20),
+          // 필터 버튼 (pick, confirm 단계에서만 표시)
+          if (_step != MapStep.navigation)
+            Positioned(
+              bottom: MediaQuery.of(context).size.height * 0.28,
+              right: 24.w,
+              child: _buildFilterButton(),
+            ),
+          DraggableScrollableSheet(
+            initialChildSize: _step == MapStep.navigation ? 0.4 : 0.28,
+            maxChildSize: _step == MapStep.navigation ? 0.6 : 0.3,
+            minChildSize: _step == MapStep.navigation ? 0.4 : 0.28,
+            controller: sheetController,
+            builder: (BuildContext context, scrollController) {
+              return Container(
+                clipBehavior: Clip.hardEdge,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
+                  ),
                 ),
-              ),
-              child: CustomScrollView(
-                controller: scrollController,
-                slivers: [
-                  if (_step == MapStep.navigation)
-                    SliverToBoxAdapter(
-                      child: Center(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: const Color(0xffEFF0F2),
-                            borderRadius: BorderRadius.circular(2.r),
+                child: CustomScrollView(
+                  controller: scrollController,
+                  slivers: [
+                    if (_step == MapStep.navigation)
+                      SliverToBoxAdapter(
+                        child: Center(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: const Color(0xffEFF0F2),
+                              borderRadius: BorderRadius.circular(2.r),
+                            ),
+                            height: 3.h,
+                            width: 90.w,
+                            margin: EdgeInsets.only(top: 16.h),
                           ),
-                          height: 3.h,
-                          width: 90.w,
-                          margin: EdgeInsets.only(top: 16.h),
+                        ),
+                      ),
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(
+                            horizontal: 24.w, vertical: 28.h),
+                        child: BlocBuilder<MapBloc, MapBlocState>(
+                          builder: (context, state) {
+                            return _buildStepWidget(state);
+                          },
                         ),
                       ),
                     ),
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(
-                          horizontal: 24.w, vertical: 28.h),
-                      child: _buildStepWidget(),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        )
-      ]),
+                  ],
+                ),
+              );
+            },
+          )
+        ]),
+      ),
     );
   }
 
-  Widget _buildStepWidget() {
+  Widget _buildStepWidget(MapBlocState state) {
     switch (_step) {
       case MapStep.pick:
-        return PickView(onDrawDestination: _onDrawDestination);
+        return PickView(
+          onDrawDestination: _onDrawDestination,
+          isLoading: state is MapLoading,
+        );
       case MapStep.confirm:
         return ConfirmView(
           selectedLocation: _selectedLocation,
           onConfirmDestination: _onConfirmDestination,
           onRedrawDestination: _onRedrawDestination,
+          isLoading: state is MapLoading,
         );
       case MapStep.navigation:
         return NavigationView(
@@ -350,7 +349,7 @@ class _MapPageState extends State<MapPage> {
           distance: _distance,
           duration: _duration,
           onEndNavigation: _onEndNavigation,
-          targetInfo: mapViewModel.getTargetInfo(),
+          targetInfo: _targetInfo,
         );
     }
   }

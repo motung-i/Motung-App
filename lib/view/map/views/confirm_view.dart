@@ -9,12 +9,14 @@ class ConfirmView extends StatelessWidget {
   final String selectedLocation;
   final VoidCallback onConfirmDestination;
   final VoidCallback onRedrawDestination;
+  final bool isLoading;
 
   const ConfirmView({
     super.key,
     required this.selectedLocation,
     required this.onConfirmDestination,
     required this.onRedrawDestination,
+    this.isLoading = false,
   });
 
   @override
@@ -29,20 +31,20 @@ class ConfirmView extends StatelessWidget {
                 .copyWith(color: AppColors.grey800)),
         SizedBox(height: 20.h),
         ButtonComponent(
-          isEnable: true,
-          text: "여행지 확정",
-          onPressed: onConfirmDestination,
+          isEnable: !isLoading,
+          text: isLoading ? "투어 시작 중..." : "여행지 확정",
+          onPressed: isLoading ? () {} : onConfirmDestination,
         ),
         SizedBox(height: 12.h),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             GestureDetector(
-              onTap: onRedrawDestination,
+              onTap: isLoading ? null : onRedrawDestination,
               child: Text(
                 "다시 뽑기",
                 style: GlobalFontDesignSystem.m3Regular.copyWith(
-                  color: AppColors.grey600,
+                  color: isLoading ? AppColors.grey400 : AppColors.grey600,
                 ),
               ),
             ),

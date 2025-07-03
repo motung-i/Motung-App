@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:motunge/dataSource/map.dart';
+import 'package:motunge/bloc/map/map_bloc.dart';
+import 'package:motunge/bloc/map/map_event.dart';
+import 'package:motunge/bloc/map/map_state.dart';
 import 'package:motunge/model/map/districts_response.dart';
-import 'package:motunge/view/component/app_tab_bar.dart';
+import 'package:motunge/view/component/region_tab_bar.dart';
 import 'package:motunge/view/designSystem/colors.dart';
 import 'package:motunge/view/designSystem/fonts.dart';
 import 'package:motunge/utils/error_handler.dart';
@@ -23,23 +26,30 @@ class LocationFilterPage extends StatefulWidget {
 }
 
 class _LocationFilterPageState extends State<LocationFilterPage> {
-  final MapDataSource _mapDataSource = MapDataSource();
   final TextEditingController _searchController = TextEditingController();
 
   List<String> _tabList = [];
   String _selectedTab = '';
   bool _isLoading = true;
 
+  final RegionTabBarController _tabController = RegionTabBarController();
+  int _currentTabIndex = 0;
+
   final Set<String> _selectedRegions = <String>{};
   final Map<String, String> _selectedDistricts = <String, String>{};
   final Set<String> _selectedSpecialRegions = <String>{};
 
-  final Map<String, Future<DistrictsResponse>> _districtsCache = {};
+  final Map<String, DistrictsResponse> _districtsCache = {};
+  final Set<String> _requestingRegions = <String>{};
 
   @override
   void initState() {
     super.initState();
-    _initializeData();
+    _searchController.addListener(() => setState(() {}));
+    _initializeSelections();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<MapBloc>().add(const MapRegionsRequested());
+    });
   }
 
   @override
@@ -49,93 +59,35 @@ class _LocationFilterPageState extends State<LocationFilterPage> {
     super.dispose();
   }
 
-  Future<void> _initializeData() async {
-    try {
-      final regionsResponse = await _mapDataSource.getRegions();
-      _tabList = regionsResponse.regions;
-
-      if (_tabList.isNotEmpty) {
-        _selectedTab = _tabList.first;
-        _preloadTabData(_selectedTab);
-      }
-
-      await _initializeSelections();
-
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      if (!mounted) return;
-
-      ErrorHandler.showAppErrorSnackBar(
-        context,
-        AppError.fromException(e),
-      );
-
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
-
-  Future<void> _initializeSelections() async {
+  void _initializeSelections() {
     if (widget.initialSelectedRegions != null) {
-      for (String region in widget.initialSelectedRegions!) {
-        if (_isSpecialRegion(region)) {
-          _selectedSpecialRegions.add(region);
-        } else {
-          _selectedRegions.add(region);
-        }
-      }
+      _selectedRegions.addAll(widget.initialSelectedRegions!);
     }
-
     if (widget.initialSelectedDistricts != null) {
-      await _initializeDistrictsWithRegions();
-    }
-  }
-
-  Future<void> _initializeDistrictsWithRegions() async {
-    if (widget.initialSelectedDistricts == null) return;
-
-    for (String region in _tabList) {
-      if (region == '기타') continue;
-
-      try {
-        final districtsResponse = await _mapDataSource.getDistricts(region);
-        for (var districtType in districtsResponse.districts) {
-          for (String district in districtType.district) {
-            if (widget.initialSelectedDistricts!.contains(district)) {
-              _selectedDistricts[district] = region;
-              _selectedRegions.remove(region);
+      for (final district in widget.initialSelectedDistricts!) {
+        if (widget.initialSelectedRegions != null) {
+          for (final region in widget.initialSelectedRegions!) {
+            if (_districtsCache.containsKey(region)) {
+              final districts = _districtsCache[region]!;
+              for (final districtType in districts.districts) {
+                if (districtType.district.contains(district)) {
+                  _selectedDistricts[district] = region;
+                  break;
+                }
+              }
             }
           }
         }
-      } catch (e) {
-        continue;
       }
     }
   }
 
-  bool _isSpecialRegion(String region) {
-    const specialRegions = ['서울', '부산', '대구', '인천', '광주', '대전', '울산', '세종'];
-    return specialRegions.contains(region);
-  }
-
   void _preloadTabData(String region) {
-    _districtsCache.putIfAbsent(
-      region,
-      () => _mapDataSource.getDistricts(region),
-    );
-  }
-
-  void _onTabSelected(int index) {
-    setState(() {
-      _selectedTab = _tabList[index];
-    });
-
-    _preloadAdjacentTabs(index);
+    if (!_districtsCache.containsKey(region) &&
+        !_requestingRegions.contains(region)) {
+      _requestingRegions.add(region);
+      context.read<MapBloc>().add(MapDistrictsRequested(region: region));
+    }
   }
 
   void _preloadAdjacentTabs(int currentIndex) {
@@ -146,10 +98,6 @@ class _LocationFilterPageState extends State<LocationFilterPage> {
     if (currentIndex < _tabList.length - 1) {
       _preloadTabData(_tabList[currentIndex + 1]);
     }
-  }
-
-  int _getCurrentTabIndex() {
-    return _tabList.indexOf(_selectedTab).clamp(0, _tabList.length - 1);
   }
 
   void _onSearchChanged(String value) {
@@ -232,32 +180,62 @@ class _LocationFilterPageState extends State<LocationFilterPage> {
         .toList();
   }
 
+  void _onTabChanged(int index, String region) {
+    setState(() {
+      _currentTabIndex = index;
+      _selectedTab = region;
+    });
+
+    _preloadAdjacentTabs(index);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildAppBar(),
-            _buildSearchBar(),
-            if (_tabList.isNotEmpty)
-              DefaultTabController(
-                length: _tabList.length,
-                initialIndex: _getCurrentTabIndex(),
-                child: AppTabBar(
-                  tabs: _tabList,
-                  onTap: _onTabSelected,
+    return BlocListener<MapBloc, MapBlocState>(
+      listener: (context, state) {
+        if (state is MapError) {
+          ErrorHandler.showErrorSnackBar(context, state.message);
+          setState(() {
+            _isLoading = false;
+          });
+        } else if (state is MapRegionsLoaded) {
+          setState(() {
+            _tabList = state.regions.regions;
+            if (_tabList.isNotEmpty) {
+              _selectedTab = _tabList.first;
+              _currentTabIndex = 0;
+              _preloadTabData(_selectedTab);
+            }
+            _isLoading = false;
+          });
+        } else if (state is MapDistrictsLoaded) {
+          _districtsCache[state.region] = state.districts;
+          _requestingRegions.remove(state.region);
+        }
+      },
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        body: SafeArea(
+          child: Column(
+            children: [
+              _buildAppBar(),
+              _buildSearchBar(),
+              if (_tabList.isNotEmpty)
+                RegionTabBarWithController(
+                  regions: _tabList,
+                  controller: _tabController,
+                  initialIndex: _currentTabIndex,
+                  onTabChanged: _onTabChanged,
                   unselectedLabelColor: AppColors.black,
-                  indicatorSize: TabBarIndicatorSize.label,
+                  showTabBarView: false,
                 ),
+              Expanded(
+                child: _isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : _buildMainContent(),
               ),
-            Expanded(
-              child: _isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : _buildMainContent(),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -361,11 +339,31 @@ class _LocationFilterPageState extends State<LocationFilterPage> {
   }
 
   Widget _buildMainContent() {
-    return Column(
-      children: [
-        Expanded(child: _buildTabContent()),
-        if (_hasSelectedItems()) _buildSelectedFilters(),
-      ],
+    return GestureDetector(
+      onHorizontalDragEnd: (details) {
+        // 스와이프 속도가 일정 임계값 이상일 때만 탭 전환
+        const int velocityThreshold = 200;
+        if (_tabList.isEmpty) return;
+
+        final velocity = details.primaryVelocity ?? 0;
+
+        // 왼쪽으로 스와이프(다음 탭)
+        if (velocity < -velocityThreshold &&
+            _currentTabIndex < _tabList.length - 1) {
+          _tabController.animateToTab(_currentTabIndex + 1);
+        }
+
+        // 오른쪽으로 스와이프(이전 탭)
+        if (velocity > velocityThreshold && _currentTabIndex > 0) {
+          _tabController.animateToTab(_currentTabIndex - 1);
+        }
+      },
+      child: Column(
+        children: [
+          Expanded(child: _buildTabContent()),
+          if (_hasSelectedItems()) _buildSelectedFilters(),
+        ],
+      ),
     );
   }
 
@@ -388,52 +386,60 @@ class _LocationFilterPageState extends State<LocationFilterPage> {
   }
 
   Widget _buildRegionContent(String region) {
-    final cachedFuture = _districtsCache.putIfAbsent(
-      region,
-      () => _mapDataSource.getDistricts(region),
-    );
+    // 캐시된 데이터가 있으면 즉시 표시
+    if (_districtsCache.containsKey(region)) {
+      final districtsResponse = _districtsCache[region]!;
+      return _buildDistrictsContent(districtsResponse, region);
+    }
 
-    return FutureBuilder<DistrictsResponse>(
-      future: cachedFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
+    // 캐시된 데이터가 없으면 로딩하고 BlocBuilder로 상태 관리
+    _preloadTabData(region);
+
+    return BlocBuilder<MapBloc, MapBlocState>(
+      builder: (context, state) {
+        if (state is MapLoading) {
           return _buildLoadingWidget();
         }
 
-        if (snapshot.hasError || !snapshot.hasData) {
-          return _buildEmptyWidget(region);
+        if (_districtsCache.containsKey(region)) {
+          final districtsResponse = _districtsCache[region]!;
+          return _buildDistrictsContent(districtsResponse, region);
         }
 
-        final districtsResponse = snapshot.data!;
-        if (districtsResponse.districts.isEmpty) {
-          return _buildEmptyWidget(region);
-        }
-
-        return Column(
-          children: [
-            ...districtsResponse.districts.asMap().entries.map((entry) {
-              final index = entry.key;
-              final districtType = entry.value;
-              final isLast = index == districtsResponse.districts.length - 1;
-
-              return Column(
-                children: [
-                  _buildRegionSection(
-                    districtType.type,
-                    districtType.district,
-                    isDistrict: true,
-                  ),
-                  if (!isLast) SizedBox(height: 20.h),
-                ],
-              );
-            }),
-            if (region != '기타') ...[
-              SizedBox(height: 20.h),
-              _buildEntireRegionChip(region),
-            ],
-          ],
-        );
+        return _buildEmptyWidget(region);
       },
+    );
+  }
+
+  Widget _buildDistrictsContent(
+      DistrictsResponse districtsResponse, String region) {
+    if (districtsResponse.districts.isEmpty) {
+      return _buildEmptyWidget(region);
+    }
+
+    return Column(
+      children: [
+        ...districtsResponse.districts.asMap().entries.map((entry) {
+          final index = entry.key;
+          final districtType = entry.value;
+          final isLast = index == districtsResponse.districts.length - 1;
+
+          return Column(
+            children: [
+              _buildRegionSection(
+                districtType.type,
+                districtType.district,
+                isDistrict: true,
+              ),
+              if (!isLast) SizedBox(height: 20.h),
+            ],
+          );
+        }),
+        if (region != '기타') ...[
+          SizedBox(height: 20.h),
+          _buildEntireRegionChip(region),
+        ],
+      ],
     );
   }
 

@@ -82,6 +82,40 @@ class AppError {
 }
 
 class ErrorHandler {
+  // 에러 메시지를 표시하지 않아야 하는 상태 코드들
+  static const Set<String> _silentErrorStatuses = {
+    'NOT_ACTIVATED_TOUR',
+    'NO_DATA_FOUND',
+    'EMPTY_RESULT',
+  };
+
+  // 에러 메시지를 표시하지 않아야 하는 HTTP 상태 코드들
+  static const Set<int> _silentHttpCodes = {
+    204, // No Content - 정상적인 응답
+  };
+
+  static bool _shouldShowError(dynamic error) {
+    if (error is DioException) {
+      final statusCode = error.response?.statusCode;
+      final responseData = error.response?.data;
+
+      // HTTP 상태 코드 확인
+      if (statusCode != null && _silentHttpCodes.contains(statusCode)) {
+        return false;
+      }
+
+      // 응답 데이터의 status 필드 확인
+      if (responseData != null && responseData is Map<String, dynamic>) {
+        final status = responseData['status'] as String?;
+        if (status != null && _silentErrorStatuses.contains(status)) {
+          return false;
+        }
+      }
+    }
+
+    return true;
+  }
+
   static void showErrorSnackBar(
     BuildContext context,
     String message, {
@@ -105,7 +139,7 @@ class ErrorHandler {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: Colors.green,
+        backgroundColor: AppColors.globalMainColor,
         duration: duration,
       ),
     );
@@ -139,6 +173,16 @@ class ErrorHandler {
       error.message,
       backgroundColor: backgroundColor,
     );
+  }
+
+  static void showAppErrorSnackBarIfNeeded(
+    BuildContext context,
+    dynamic error,
+  ) {
+    if (_shouldShowError(error)) {
+      final appError = AppError.fromException(error);
+      showAppErrorSnackBar(context, appError);
+    }
   }
 
   static Future<void> showErrorDialog(

@@ -6,10 +6,12 @@ import 'package:motunge/view/designSystem/colors.dart';
 
 class PickView extends StatelessWidget {
   final VoidCallback onDrawDestination;
+  final bool isLoading;
 
   const PickView({
     super.key,
     required this.onDrawDestination,
+    this.isLoading = false,
   });
 
   @override
@@ -24,9 +26,9 @@ class PickView extends StatelessWidget {
                 .copyWith(color: AppColors.grey800)),
         SizedBox(height: 20.h),
         ButtonComponent(
-          isEnable: true,
-          text: "여행지 뽑기",
-          onPressed: onDrawDestination,
+          isEnable: !isLoading,
+          text: isLoading ? "여행지 찾는 중..." : "여행지 뽑기",
+          onPressed: isLoading ? () {} : onDrawDestination,
         ),
       ],
     );

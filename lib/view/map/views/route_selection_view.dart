@@ -1,16 +1,19 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:motunge/bloc/map/map_bloc.dart';
+import 'package:motunge/bloc/map/map_event.dart';
+import 'package:motunge/bloc/map/map_state.dart';
 import 'package:motunge/model/map/naver_directions_response.dart';
 import 'package:motunge/view/common/custom_navigation_bar.dart';
 import 'package:motunge/view/designSystem/colors.dart';
 import 'package:motunge/view/designSystem/fonts.dart';
-import 'package:motunge/viewModel/map_viewmodel.dart';
 
 class RouteSelectionView extends StatefulWidget {
   const RouteSelectionView({super.key});
@@ -24,13 +27,13 @@ class _RouteSelectionViewState extends State<RouteSelectionView> {
 
   final Completer<NaverMapController> _mapControllerCompleter =
       Completer<NaverMapController>();
-  final MapViewmodel _mapViewModel = MapViewmodel();
   final DraggableScrollableController _sheetController =
       DraggableScrollableController();
 
   NaverMapController? _mapController;
   bool _isLoading = false;
   final List<NOverlay> _overlays = [];
+  NaverDirectionsResponse? _directionsResponse;
 
   @override
   void initState() {
@@ -52,25 +55,11 @@ class _RouteSelectionViewState extends State<RouteSelectionView> {
     });
 
     try {
-      final position = await _mapViewModel.initializeCurrentLocation();
-      if (position == null) {
-        _showErrorSnackBar('위치 정보를 가져올 수 없습니다.');
-        setState(() {
-          _isLoading = false;
-        });
-        return;
-      }
-
-      await _updateMapCamera(
-        NLatLng(position.latitude, position.longitude),
-        _initialZoom,
-      );
-
-      // 뷰모델을 통해 경로 정보 요청
-      await _fetchRouteData();
+      // 현재 위치 요청
+      context.read<MapBloc>().add(const MapCurrentLocationRequested());
     } catch (e) {
       debugPrint('Error initializing location: $e');
-      _showErrorSnackBar('위치 정보를 가져오는데 실패했습니다.');
+      _showErrorSnackBar('위치 정보 가져오기에 실패했습니다.');
       setState(() {
         _isLoading = false;
       });
@@ -99,21 +88,6 @@ class _RouteSelectionViewState extends State<RouteSelectionView> {
     }
   }
 
-  Future<void> _fetchRouteData() async {
-    try {
-      final response = await _mapViewModel.fetchAndCacheRouteData();
-      if (response != null) {
-        _drawRoute(response);
-      } else {
-        _showErrorSnackBar('경로 정보를 가져오는데 실패했습니다.');
-      }
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
-
   void _drawRoute(NaverDirectionsResponse response) {
     if (_mapController == null) return;
 
@@ -134,7 +108,6 @@ class _RouteSelectionViewState extends State<RouteSelectionView> {
     _overlays.add(optimalPolyline);
     _mapController!.addOverlay(optimalPolyline);
 
-    // 무료 경로 그리기 (회색, 점선 효과)
     final tollFreePath = response.traavoidtoll.path
         .map((coord) => NLatLng(coord[1], coord[0]))
         .toList();
@@ -182,152 +155,192 @@ class _RouteSelectionViewState extends State<RouteSelectionView> {
   }
 
   void _onStartNavigation(Direction direction) {
-    // 선택된 경로를 뷰모델에 저장
-    _mapViewModel.selectDirection(direction);
+    context.read<MapBloc>().add(MapDirectionSelected(direction: direction));
     // 네비게이션 가이드 뷰로 이동
     context.push('/map/navigation-guide');
   }
 
   @override
   Widget build(BuildContext context) {
-    final directionsResponse = _mapViewModel.directionsResponse;
-
-    return Scaffold(
-      body: Stack(
-        children: [
-          // Naver Map
-          NaverMap(
-            options: const NaverMapViewOptions(
-              indoorEnable: true,
-              locationButtonEnable: false,
-              consumeSymbolTapEvents: false,
+    return BlocListener<MapBloc, MapBlocState>(
+      listener: (context, state) {
+        if (state is MapError) {
+          _showErrorSnackBar(state.message);
+          setState(() {
+            _isLoading = false;
+          });
+        } else if (state is MapCurrentLocationLoaded) {
+          _updateMapCamera(
+            NLatLng(state.position.latitude, state.position.longitude),
+            _initialZoom,
+          );
+          // 위치 로드 후 경로 데이터 요청
+          context.read<MapBloc>().add(const MapRouteDataRequested());
+        } else if (state is MapRouteDataLoaded) {
+          setState(() {
+            _directionsResponse = state.directionsResponse;
+            _isLoading = false;
+          });
+          _drawRoute(state.directionsResponse);
+        }
+      },
+      child: Scaffold(
+        body: Stack(
+          children: [
+            // Naver Map
+            NaverMap(
+              options: const NaverMapViewOptions(
+                indoorEnable: true,
+                locationButtonEnable: false,
+                consumeSymbolTapEvents: false,
+              ),
+              onMapReady: (controller) {
+                _mapController = controller;
+                _mapControllerCompleter.complete(controller);
+              },
             ),
-            onMapReady: (controller) {
-              _mapController = controller;
-              _mapControllerCompleter.complete(controller);
-            },
-          ),
 
-          // Back Button
-          Positioned(
-            top: 67.h,
-            left: 24.w,
-            child: GestureDetector(
-              onTap: () => Navigator.of(context).pop(),
-              child: Container(
-                width: 32.w,
-                height: 32.h,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black12,
-                      blurRadius: 4,
-                      offset: Offset(0, 2),
+            // Back Button
+            Positioned(
+              top: 67.h,
+              left: 24.w,
+              child: GestureDetector(
+                onTap: () => Navigator.of(context).pop(),
+                child: Container(
+                  width: 32.w,
+                  height: 32.h,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black12,
+                        blurRadius: 4,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Center(
+                    child: SvgPicture.asset(
+                      'assets/images/arrow.svg',
+                      width: 16.w,
+                      height: 16.h,
                     ),
-                  ],
-                ),
-                child: Center(
-                  child: SvgPicture.asset(
-                    'assets/images/arrow.svg',
-                    width: 16.w,
-                    height: 16.h,
                   ),
                 ),
               ),
             ),
-          ),
 
-          // Bottom Sheet
-          DraggableScrollableSheet(
-            initialChildSize: 0.4,
-            minChildSize: 0.4,
-            maxChildSize: 0.6,
-            controller: _sheetController,
-            builder: (BuildContext context, ScrollController scrollController) {
-              return Container(
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(20),
-                    topRight: Radius.circular(20),
+            // Bottom Sheet
+            DraggableScrollableSheet(
+              initialChildSize: 0.4,
+              minChildSize: 0.4,
+              maxChildSize: 0.6,
+              controller: _sheetController,
+              builder:
+                  (BuildContext context, ScrollController scrollController) {
+                return Container(
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(20),
+                      topRight: Radius.circular(20),
+                    ),
                   ),
-                ),
-                child: SingleChildScrollView(
-                  controller: scrollController,
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 24.w),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SizedBox(height: 16.h),
-                        Center(
-                          child: Container(
-                            width: 91.w,
-                            height: 3.h,
-                            decoration: BoxDecoration(
-                              color: AppColors.grey200,
-                              borderRadius: BorderRadius.circular(1.5),
-                            ),
-                          ),
-                        ),
-                        SizedBox(height: 34.h),
-                        if (_isLoading)
-                          const Center(
-                            child: CircularProgressIndicator(),
-                          )
-                        else if (directionsResponse != null) ...[
-                          _RouteCard(
-                            routeType: '실시간 추천',
-                            duration: _formatDuration(
-                                directionsResponse.traoptimal.duration),
-                            distance: _formatDistance(
-                                directionsResponse.traoptimal.distance),
-                            toll: _formatPrice(
-                                directionsResponse.traoptimal.tollFare),
-                            taxiFare: _formatPrice(
-                                directionsResponse.traoptimal.taxiFare),
-                            onStartNavigation: () => _onStartNavigation(
-                                directionsResponse.traoptimal),
-                          ),
-                          SizedBox(height: 20.h),
-                          const Divider(color: AppColors.grey100, height: 1),
-                          SizedBox(height: 20.h),
-                          _RouteCard(
-                            routeType: '무료 우선',
-                            duration: _formatDuration(
-                                directionsResponse.traavoidtoll.duration),
-                            distance: _formatDistance(
-                                directionsResponse.traavoidtoll.distance),
-                            toll: _formatPrice(
-                                directionsResponse.traavoidtoll.tollFare),
-                            taxiFare: _formatPrice(
-                                directionsResponse.traavoidtoll.taxiFare),
-                            onStartNavigation: () => _onStartNavigation(
-                                directionsResponse.traavoidtoll),
-                          ),
-                        ] else
+                  child: SingleChildScrollView(
+                    controller: scrollController,
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 24.w),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(height: 16.h),
                           Center(
-                            child: Text(
-                              '경로 정보를 불러올 수 없습니다.',
-                              style:
-                                  GlobalFontDesignSystem.labelRegular.copyWith(
-                                color: AppColors.grey500,
+                            child: Container(
+                              width: 91.w,
+                              height: 3.h,
+                              decoration: BoxDecoration(
+                                color: AppColors.grey200,
+                                borderRadius: BorderRadius.circular(1.5),
                               ),
                             ),
                           ),
-                        SizedBox(height: 100.h), // 바텀 네비게이션 바 공간
-                      ],
+                          SizedBox(height: 34.h),
+                          BlocBuilder<MapBloc, MapBlocState>(
+                            builder: (context, state) {
+                              if (_isLoading || state is MapLoading) {
+                                return const Center(
+                                  child: CircularProgressIndicator(),
+                                );
+                              } else if (_directionsResponse != null) {
+                                return Column(
+                                  children: [
+                                    _RouteCard(
+                                      routeType: '실시간 추천',
+                                      duration: _formatDuration(
+                                          _directionsResponse!
+                                              .traoptimal.duration),
+                                      distance: _formatDistance(
+                                          _directionsResponse!
+                                              .traoptimal.distance),
+                                      toll: _formatPrice(_directionsResponse!
+                                          .traoptimal.tollFare),
+                                      taxiFare: _formatPrice(
+                                          _directionsResponse!
+                                              .traoptimal.taxiFare),
+                                      onStartNavigation: () =>
+                                          _onStartNavigation(
+                                              _directionsResponse!.traoptimal),
+                                    ),
+                                    SizedBox(height: 20.h),
+                                    const Divider(
+                                        color: AppColors.grey100, height: 1),
+                                    SizedBox(height: 20.h),
+                                    _RouteCard(
+                                      routeType: '무료 우선',
+                                      duration: _formatDuration(
+                                          _directionsResponse!
+                                              .traavoidtoll.duration),
+                                      distance: _formatDistance(
+                                          _directionsResponse!
+                                              .traavoidtoll.distance),
+                                      toll: _formatPrice(_directionsResponse!
+                                          .traavoidtoll.tollFare),
+                                      taxiFare: _formatPrice(
+                                          _directionsResponse!
+                                              .traavoidtoll.taxiFare),
+                                      onStartNavigation: () =>
+                                          _onStartNavigation(
+                                              _directionsResponse!
+                                                  .traavoidtoll),
+                                    ),
+                                  ],
+                                );
+                              } else {
+                                return Center(
+                                  child: Text(
+                                    '경로 정보를 불러올 수 없습니다.',
+                                    style: GlobalFontDesignSystem.labelRegular
+                                        .copyWith(
+                                      color: AppColors.grey500,
+                                    ),
+                                  ),
+                                );
+                              }
+                            },
+                          ),
+                          SizedBox(height: 100.h), // 바텀 네비게이션 바 공간
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              );
-            },
-          ),
-        ],
+                );
+              },
+            ),
+          ],
+        ),
+        bottomNavigationBar: const CustomNavigationBar(),
       ),
-      bottomNavigationBar: const CustomNavigationBar(),
     );
   }
 }
